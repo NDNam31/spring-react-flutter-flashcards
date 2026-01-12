@@ -1,7 +1,7 @@
-✅ DDL SQL – FINAL VERSION (CHỐT)
-1️⃣ USERS
+--✅ DDL SQL – FINAL VERSION (CHỐT)
+--1️⃣ USERS
 
-Dùng cho 1 người trước, mở rộng multi-user không cần sửa schema
+--Dùng cho 1 người trước, mở rộng multi-user không cần sửa schema
 
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
@@ -11,9 +11,9 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-2️⃣ DECKS (BỘ THẺ)
+--2️⃣ DECKS (BỘ THẺ)
 
-Có updated_at để mobile sync, có source_type để import/export
+--Có updated_at để mobile sync, có source_type để import/export
 
 CREATE TABLE decks (
     id BIGSERIAL PRIMARY KEY,
@@ -37,9 +37,9 @@ CREATE TABLE decks (
         ON DELETE CASCADE
 );
 
-3️⃣ CARDS (NỘI DUNG – BẤT BIẾN)
+--3️⃣ CARDS (NỘI DUNG – BẤT BIẾN)
 
-KHÔNG CHỨA LOGIC HỌC – KHÔNG BAO GIỜ RESET
+-- KHÔNG CHỨA LOGIC HỌC – KHÔNG BAO GIỜ RESET
 
 CREATE TABLE cards (
     id BIGSERIAL PRIMARY KEY,
@@ -69,9 +69,9 @@ CREATE TABLE cards (
         ON DELETE CASCADE
 );
 
-4️⃣ CARD_PROGRESS (TRÁI TIM CỦA ANKI + QUIZLET)
+--4️⃣ CARD_PROGRESS (TRÁI TIM CỦA ANKI + QUIZLET)
 
-Có thể reset / clone / cram mà không phá dữ liệu gốc
+--Có thể reset / clone / cram mà không phá dữ liệu gốc
 
 CREATE TABLE card_progress (
     id BIGSERIAL PRIMARY KEY,
@@ -107,9 +107,9 @@ CREATE TABLE card_progress (
     CONSTRAINT uq_user_card UNIQUE (user_id, card_id)
 );
 
-5️⃣ STUDY_LOG (THỐNG KÊ – HEATMAP – AI SAU NÀY)
+--5️⃣ STUDY_LOG (THỐNG KÊ – HEATMAP – AI SAU NÀY)
 
-Phục vụ dashboard, biểu đồ, phân tích “từ hay quên”
+--Phục vụ dashboard, biểu đồ, phân tích “từ hay quên”
 
 CREATE TABLE study_log (
     id BIGSERIAL PRIMARY KEY,
@@ -134,7 +134,7 @@ CREATE TABLE study_log (
         ON DELETE CASCADE
 );
 
-6️⃣ INDEXES (HIỆU NĂNG – BẮT BUỘC)
+--6️⃣ INDEXES (HIỆU NĂNG – BẮT BUỘC)
 -- Lấy thẻ cần ôn hôm nay
 CREATE INDEX idx_card_progress_due
 ON card_progress (user_id, next_review);
