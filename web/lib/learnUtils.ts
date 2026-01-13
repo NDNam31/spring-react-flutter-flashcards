@@ -1,5 +1,5 @@
 import { Card } from '@/types/card';
-import { MultipleChoiceQuestion } from '@/types/learn';
+import { MultipleChoiceQuestion, WrittenQuestion, Question } from '@/types/learn';
 
 /**
  * Shuffle mảng bằng Fisher-Yates algorithm
@@ -55,6 +55,7 @@ export function generateMultipleChoiceQuestions(cards: Card[]): MultipleChoiceQu
     const correctIndex = shuffledOptions.indexOf(correctAnswer);
 
     return {
+      type: 'MCQ',
       id: card.id,
       question: card.term,
       correctAnswer,
@@ -70,13 +71,122 @@ export function generateMultipleChoiceQuestions(cards: Card[]): MultipleChoiceQu
 }
 
 /**
- * Kiểm tra đáp án có đúng không
+ * Tạo câu hỏi tự luận (gõ phím) từ danh sách thẻ
+ * 
+ * Logic:
+ * - Câu hỏi: Definition (+ image nếu có)
+ * - Đáp án: Term (người dùng phải gõ chính xác)
+ * 
+ * @param cards Danh sách thẻ trong deck
+ * @returns Mảng câu hỏi tự luận đã shuffle
+ */
+export function generateWrittenQuestions(cards: Card[]): WrittenQuestion[] {
+  if (cards.length === 0) {
+    return [];
+  }
+
+  const questions: WrittenQuestion[] = cards.map((card) => ({
+    type: 'WRITTEN',
+    id: card.id,
+    question: card.definition,
+    correctAnswer: card.term,
+    example: card.example || undefined,
+    card,
+  }));
+
+  return shuffle(questions);
+}
+
+/**
+ * Tạo câu hỏi hỗn hợp (random MCQ và WRITTEN)
+ * 
+ * @param cards Danh sách thẻ trong deck
+ * @returns Mảng câu hỏi hỗn hợp đã shuffle
+ */
+export function generateMixedQuestions(cards: Card[]): Question[] {
+  if (cards.length === 0) {
+    return [];
+  }
+
+  const questions: Question[] = cards.map((card, index) => {
+    // Random 50/50 giữa MCQ và WRITTEN
+    const isMCQ = Math.random() < 0.5;
+
+    if (isMCQ) {
+      // Tạo câu MCQ
+      const correctAnswer = card.definition;
+      const otherCards = cards.filter((_, i) => i !== index);
+      const wrongAnswers = shuffle(otherCards)
+        .slice(0, Math.min(3, otherCards.length))
+        .map((c) => c.definition);
+      const allOptions = [correctAnswer, ...wrongAnswers];
+      const shuffledOptions = shuffle(allOptions);
+      const correctIndex = shuffledOptions.indexOf(correctAnswer);
+
+      return {
+        type: 'MCQ',
+        id: card.id,
+        question: card.term,
+        correctAnswer,
+        options: shuffledOptions,
+        correctIndex,
+        example: card.example || undefined,
+        card,
+      } as MultipleChoiceQuestion;
+    } else {
+      // Tạo câu WRITTEN
+      return {
+        type: 'WRITTEN',
+        id: card.id,
+        question: card.definition,
+        correctAnswer: card.term,
+        example: card.example || undefined,
+        card,
+      } as WrittenQuestion;
+    }
+  });
+
+  return shuffle(questions);
+}
+
+/**
+ * Chuẩn hóa chuỗi để so sánh
+ * - Trim khoảng trắng 2 đầu
+ * - Chuyển về lowercase
+ */
+function normalizeString(str: string): string {
+  return str.trim().toLowerCase();
+}
+
+/**
+ * Kiểm tra đáp án tự luận có đúng không
+ * 
+ * Logic:
+ * - Trim khoảng trắng 2 đầu
+ * - Case-insensitive (không phân biệt hoa thường)
+ * - Ví dụ: " Apple " == "apple" -> TRUE
+ * 
+ * @param userInput Đáp án người dùng nhập
+ * @param correctAnswer Đáp án đúng
+ * @returns true nếu đúng, false nếu sai
+ */
+export function checkWrittenAnswer(userInput: string, correctAnswer: string): boolean {
+  return normalizeString(userInput) === normalizeString(correctAnswer);
+}
+
+/**
+ * Kiểm tra đáp án có đúng không (cho cả MCQ và WRITTEN)
  */
 export function checkAnswer(
-  question: MultipleChoiceQuestion,
-  selectedIndex: number
+  question: Question,
+  selectedIndex?: number,
+  userInput?: string
 ): boolean {
-  return selectedIndex === question.correctIndex;
+  if (question.type === 'MCQ') {
+    return selectedIndex === question.correctIndex;
+  } else {
+    return userInput ? checkWrittenAnswer(userInput, question.correctAnswer) : false;
+  }
 }
 
 /**

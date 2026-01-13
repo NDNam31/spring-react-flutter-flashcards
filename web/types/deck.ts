@@ -4,6 +4,7 @@ export interface Deck {
   description: string | null;
   sourceType: string;
   sourceId: string | null;
+  cardCount?: number;
   createdAt: string;
   updatedAt: string;
 }

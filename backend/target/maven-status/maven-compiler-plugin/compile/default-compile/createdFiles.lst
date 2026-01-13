@@ -1,8 +1,11 @@
 com\flashcards\dto\request\RegisterRequest.class
+com\flashcards\dto\ReviewResponse.class
 com\flashcards\repository\CardRepository.class
 com\flashcards\exception\DeckNotFoundException.class
 com\flashcards\model\entity\StudyLog.class
 com\flashcards\repository\UserRepository.class
+com\flashcards\dto\ReviewRequest.class
+com\flashcards\dto\ReviewResponse$ReviewResponseBuilder.class
 com\flashcards\security\JwtAuthenticationFilter.class
 com\flashcards\dto\request\CreateCardRequest.class
 com\flashcards\dto\request\LoginRequest.class
@@ -15,6 +18,7 @@ com\flashcards\model\entity\Card$CardBuilder.class
 com\flashcards\dto\response\DeckResponse$DeckResponseBuilder.class
 com\flashcards\dto\response\ReviewResponse.class
 com\flashcards\dto\request\ReviewRequest.class
+com\flashcards\enums\ReviewGrade.class
 com\flashcards\security\CustomUserDetailsService.class
 com\flashcards\controller\DeckController.class
 com\flashcards\dto\response\DeckResponse.class

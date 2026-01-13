@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus } from 'lucide-react';
+import { Plus, Image as ImageIcon, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 import { api } from '@/lib/axios';
+import { uploadImageToCloudinary, validateImageFile } from '@/lib/cloudinary';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -38,6 +40,9 @@ interface AddCardDialogProps {
 export function AddCardDialog({ deckId, onCardAdded }: AddCardDialogProps) {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -48,6 +53,40 @@ export function AddCardDialog({ deckId, onCardAdded }: AddCardDialogProps) {
     resolver: zodResolver(createCardSchema),
   });
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setImageUrl(url);
+      toast.success('Upload ảnh thành công!');
+    } catch (error: any) {
+      toast.error(error.message || 'Upload ảnh thất bại');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const onSubmit = async (data: CreateCardFormData) => {
     setIsLoading(true);
     try {
@@ -56,12 +95,14 @@ export function AddCardDialog({ deckId, onCardAdded }: AddCardDialogProps) {
         term: data.term,
         definition: data.definition,
         example: data.example || undefined,
+        imageUrl: imageUrl || undefined,
       };
 
       await api.post(`/decks/${deckId}/cards`, payload);
 
       toast.success('Thêm thẻ thành công!');
-      reset(); // Reset form nhưng KHÔNG đóng dialog
+      reset(); // Reset form
+      setImageUrl(''); // Reset image
       onCardAdded(); // Refresh list
     } catch (error: any) {
       const message =
@@ -132,6 +173,70 @@ export function AddCardDialog({ deckId, onCardAdded }: AddCardDialogProps) {
               />
               {errors.example && (
                 <p className="text-sm text-red-500">{errors.example.message}</p>
+              )}
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="grid gap-2">
+              <Label>Hình ảnh (Tùy chọn)</Label>
+              
+              {/* Upload Button */}
+              {!imageUrl && (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="w-full"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Đang upload...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Upload hình ảnh
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hỗ trợ: JPEG, PNG, GIF, WebP (tối đa 5MB)
+                  </p>
+                </div>
+              )}
+
+              {/* Image Preview */}
+              {imageUrl && (
+                <div className="relative border rounded-lg p-2 bg-muted/50">
+                  <div className="relative w-full h-40">
+                    <Image
+                      src={imageUrl}
+                      alt="Preview"
+                      fill
+                      className="object-contain rounded"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6"
+                    onClick={handleRemoveImage}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
               )}
             </div>
           </div>

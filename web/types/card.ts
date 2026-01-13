@@ -18,4 +18,5 @@ export interface CreateCardRequest {
   term: string;
   definition: string;
   example?: string;
+  imageUrl?: string;
 }

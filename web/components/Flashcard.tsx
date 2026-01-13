@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { Card } from '@/types/card';
 
 interface FlashcardProps {
@@ -28,6 +29,19 @@ export function Flashcard({ card, isFlipped, onFlip }: FlashcardProps) {
             <div className="text-sm text-muted-foreground mb-4 uppercase tracking-wide">
               Thuật ngữ
             </div>
+            
+            {/* Image nếu có */}
+            {card.imageUrl && (
+              <div className="relative w-full max-w-sm h-32 mb-4">
+                <Image
+                  src={card.imageUrl}
+                  alt={card.term}
+                  fill
+                  className="object-contain rounded-lg"
+                />
+              </div>
+            )}
+            
             <div className="text-4xl font-bold text-center break-words">
               {card.term}
             </div>

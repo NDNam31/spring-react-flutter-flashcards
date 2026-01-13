@@ -128,7 +128,7 @@ export function DeckCard({ deck, onDeleted, onUpdated }: DeckCardProps) {
         <CardContent>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <BookOpen className="h-4 w-4" />
-            <span>0 thẻ</span>
+            <span>{deck.cardCount ?? 0} thẻ</span>
           </div>
         </CardContent>
         <CardFooter>

@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
+import Image from 'next/image';
+import { Image as ImageIcon, X, Loader2 } from 'lucide-react';
 import { api } from '@/lib/axios';
+import { uploadImageToCloudinary, validateImageFile } from '@/lib/cloudinary';
 import { Card } from '@/types/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,6 +40,9 @@ interface EditCardDialogProps {
 
 export function EditCardDialog({ open, onOpenChange, card, onUpdated }: EditCardDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>(card.imageUrl || '');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -51,6 +57,38 @@ export function EditCardDialog({ open, onOpenChange, card, onUpdated }: EditCard
     },
   });
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const url = await uploadImageToCloudinary(file);
+      setImageUrl(url);
+      toast.success('Upload ảnh thành công!');
+    } catch (error: any) {
+      toast.error(error.message || 'Upload ảnh thất bại');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageUrl('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const onSubmit = async (data: EditCardFormData) => {
     setIsLoading(true);
     try {
@@ -58,6 +96,7 @@ export function EditCardDialog({ open, onOpenChange, card, onUpdated }: EditCard
         term: data.term,
         definition: data.definition,
         example: data.example || undefined,
+        imageUrl: imageUrl || undefined,
       });
 
       toast.success('Cập nhật thẻ thành công!');
@@ -123,6 +162,68 @@ export function EditCardDialog({ open, onOpenChange, card, onUpdated }: EditCard
               />
               {errors.example && (
                 <p className="text-sm text-red-500">{errors.example.message}</p>
+              )}
+            </div>
+
+            {/* Image Upload Section */}
+            <div className="grid gap-2">
+              <Label>Hình ảnh (Tùy chọn)</Label>
+              
+              {!imageUrl && (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="edit-image-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="w-full"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Đang upload...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Upload hình ảnh
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hỗ trợ: JPEG, PNG, GIF, WebP (tối đa 5MB)
+                  </p>
+                </div>
+              )}
+
+              {imageUrl && (
+                <div className="relative border rounded-lg p-2 bg-muted/50">
+                  <div className="relative w-full h-40">
+                    <Image
+                      src={imageUrl}
+                      alt="Preview"
+                      fill
+                      className="object-contain rounded"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6"
+                    onClick={handleRemoveImage}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
               )}
             </div>
           </div>
