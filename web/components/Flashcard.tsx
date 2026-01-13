@@ -2,7 +2,10 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { Volume2 } from 'lucide-react';
 import { Card } from '@/types/card';
+import { useTTS } from '@/hooks/use-tts';
+import { Button } from '@/components/ui/button';
 
 interface FlashcardProps {
   card: Card;
@@ -11,6 +14,18 @@ interface FlashcardProps {
 }
 
 export function Flashcard({ card, isFlipped, onFlip }: FlashcardProps) {
+  const { speak } = useTTS();
+
+  const handleSpeakTerm = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card flip
+    speak(card.term, 'en-US');
+  };
+
+  const handleSpeakDefinition = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card flip
+    speak(card.definition, 'en-US');
+  };
+
   return (
     <div className="perspective-1000 w-full max-w-2xl mx-auto">
       <motion.div
@@ -42,10 +57,21 @@ export function Flashcard({ card, isFlipped, onFlip }: FlashcardProps) {
               </div>
             )}
             
-            <div 
-              className="text-4xl font-bold text-center break-words prose prose-xl max-w-none"
-              dangerouslySetInnerHTML={{ __html: card.term }}
-            />
+            <div className="relative w-full flex items-center justify-center gap-3">
+              <div 
+                className="text-4xl font-bold text-center break-words prose prose-xl max-w-none flex-1"
+                dangerouslySetInnerHTML={{ __html: card.term }}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSpeakTerm}
+                className="flex-shrink-0 hover:bg-primary/10 hover:text-primary transition-all"
+                title="Nghe phát âm"
+              >
+                <Volume2 className="h-6 w-6" />
+              </Button>
+            </div>
             <div className="absolute bottom-6 text-sm text-muted-foreground">
               Nhấn Space hoặc click để xem định nghĩa
             </div>
@@ -64,10 +90,21 @@ export function Flashcard({ card, isFlipped, onFlip }: FlashcardProps) {
             <div className="text-sm text-muted-foreground mb-4 uppercase tracking-wide">
               Định nghĩa
             </div>
-            <div 
-              className="text-3xl font-semibold text-center mb-6 break-words prose prose-xl max-w-none"
-              dangerouslySetInnerHTML={{ __html: card.definition }}
-            />
+            <div className="relative w-full flex items-center justify-center gap-3">
+              <div 
+                className="text-3xl font-semibold text-center mb-6 break-words prose prose-xl max-w-none flex-1"
+                dangerouslySetInnerHTML={{ __html: card.definition }}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSpeakDefinition}
+                className="flex-shrink-0 hover:bg-primary/10 hover:text-primary transition-all mb-6"
+                title="Nghe phát âm"
+              >
+                <Volume2 className="h-6 w-6" />
+              </Button>
+            </div>
             {card.example && (
               <div className="mt-4 p-4 bg-white/50 rounded-lg border border-primary/20 max-w-md">
                 <div className="text-xs text-muted-foreground mb-1 uppercase">

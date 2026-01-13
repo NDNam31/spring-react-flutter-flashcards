@@ -3,13 +3,15 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { ArrowLeft, BookOpen, CheckCircle2, XCircle, Trophy, PenTool, ListChecks, Shuffle } from 'lucide-react';
+import { ArrowLeft, BookOpen, CheckCircle2, XCircle, Trophy, PenTool, ListChecks, Shuffle, Volume2 } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { api } from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Card } from '@/types/card';
 import { Question, AnswerResult } from '@/types/learn';
+import { stripHtml } from '@/lib/htmlUtils';
+import { useTTS } from '@/hooks/use-tts';
 import { 
   generateMultipleChoiceQuestions, 
   generateWrittenQuestions,
@@ -58,6 +60,9 @@ export default function LearnModePage({ params }: PageProps) {
   const [hasStarted, setHasStarted] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'MCQ' | 'WRITTEN' | 'MIXED' | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  
+  // TTS Hook
+  const { speak } = useTTS();
 
   useEffect(() => {
     const initPage = async () => {
@@ -471,10 +476,21 @@ export default function LearnModePage({ params }: PageProps) {
               </div>
             )}
             
-            <div 
-              className="text-2xl text-center font-semibold leading-none tracking-tight prose prose-lg max-w-none mx-auto"
-              dangerouslySetInnerHTML={{ __html: currentQuestion.question }}
-            />
+            <div className="flex items-start justify-center gap-3">
+              <div 
+                className="text-2xl text-center font-semibold leading-none tracking-tight prose prose-lg max-w-none flex-1"
+                dangerouslySetInnerHTML={{ __html: currentQuestion.question }}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => speak(currentQuestion.question, 'en-US')}
+                className="flex-shrink-0 hover:bg-primary/10 hover:text-primary transition-all"
+                title="Nghe phát âm"
+              >
+                <Volume2 className="h-5 w-5" />
+              </Button>
+            </div>
             {currentQuestion.example && (
               <div className="text-sm text-muted-foreground text-center italic mt-2 prose prose-sm max-w-none mx-auto">
                 Ví dụ: <span dangerouslySetInnerHTML={{ __html: currentQuestion.example }} />
@@ -514,10 +530,9 @@ export default function LearnModePage({ params }: PageProps) {
                       <span className="font-semibold mr-3">
                         {String.fromCharCode(65 + index)}.
                       </span>
-                      <div 
-                        className="flex-1 prose prose-sm max-w-none"
-                        dangerouslySetInnerHTML={{ __html: option }}
-                      />
+                      <span className="flex-1">
+                        {stripHtml(option)}
+                      </span>
                       {showResult && isCorrect && (
                         <CheckCircle2 className="h-5 w-5 text-green-600 ml-2" />
                       )}
@@ -588,10 +603,9 @@ export default function LearnModePage({ params }: PageProps) {
                           </div>
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Đáp án đúng:</p>
-                            <div 
-                              className="font-medium text-green-700 dark:text-green-300 prose prose-sm max-w-none"
-                              dangerouslySetInnerHTML={{ __html: currentQuestion.correctAnswer }}
-                            />
+                            <p className="font-medium text-green-700 dark:text-green-300">
+                              {stripHtml(currentQuestion.correctAnswer)}
+                            </p>
                           </div>
                         </div>
                       </div>
