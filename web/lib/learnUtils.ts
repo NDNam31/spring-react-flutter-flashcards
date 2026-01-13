@@ -162,16 +162,20 @@ function normalizeString(str: string): string {
  * Kiểm tra đáp án tự luận có đúng không
  * 
  * Logic:
+ * - Strip HTML tags từ correctAnswer trước
  * - Trim khoảng trắng 2 đầu
  * - Case-insensitive (không phân biệt hoa thường)
  * - Ví dụ: " Apple " == "apple" -> TRUE
+ * - Ví dụ: "<p>Apple</p>" và nhập "Apple" -> TRUE
  * 
  * @param userInput Đáp án người dùng nhập
- * @param correctAnswer Đáp án đúng
+ * @param correctAnswer Đáp án đúng (có thể chứa HTML)
  * @returns true nếu đúng, false nếu sai
  */
 export function checkWrittenAnswer(userInput: string, correctAnswer: string): boolean {
-  return normalizeString(userInput) === normalizeString(correctAnswer);
+  // Strip HTML từ correctAnswer trước khi so sánh
+  const cleanCorrectAnswer = correctAnswer.replace(/<[^>]*>/g, '').trim();
+  return normalizeString(userInput) === normalizeString(cleanCorrectAnswer);
 }
 
 /**

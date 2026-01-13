@@ -42,9 +42,10 @@ export function Flashcard({ card, isFlipped, onFlip }: FlashcardProps) {
               </div>
             )}
             
-            <div className="text-4xl font-bold text-center break-words">
-              {card.term}
-            </div>
+            <div 
+              className="text-4xl font-bold text-center break-words prose prose-xl max-w-none"
+              dangerouslySetInnerHTML={{ __html: card.term }}
+            />
             <div className="absolute bottom-6 text-sm text-muted-foreground">
               Nhấn Space hoặc click để xem định nghĩa
             </div>
@@ -63,15 +64,19 @@ export function Flashcard({ card, isFlipped, onFlip }: FlashcardProps) {
             <div className="text-sm text-muted-foreground mb-4 uppercase tracking-wide">
               Định nghĩa
             </div>
-            <div className="text-3xl font-semibold text-center mb-6 break-words">
-              {card.definition}
-            </div>
+            <div 
+              className="text-3xl font-semibold text-center mb-6 break-words prose prose-xl max-w-none"
+              dangerouslySetInnerHTML={{ __html: card.definition }}
+            />
             {card.example && (
               <div className="mt-4 p-4 bg-white/50 rounded-lg border border-primary/20 max-w-md">
                 <div className="text-xs text-muted-foreground mb-1 uppercase">
                   Ví dụ
                 </div>
-                <div className="text-base italic">{card.example}</div>
+                <div 
+                  className="text-base italic prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: card.example }}
+                />
               </div>
             )}
             <div className="absolute bottom-6 text-sm text-muted-foreground">

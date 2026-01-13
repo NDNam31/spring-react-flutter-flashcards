@@ -207,3 +207,36 @@
 .prose mark {
   @apply rounded px-1;
 }
+
+/* Prose styles for headings */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  @apply font-bold my-2;
+}
+
+/* Prose styles for lists */
+.prose ul,
+.prose ol {
+  @apply my-2 pl-5;
+}
+
+.prose ul {
+  @apply list-disc;
+}
+
+.prose ol {
+  @apply list-decimal;
+}
+
+.prose li {
+  @apply my-1;
+}
+
+/* Ensure prose content doesn't overflow buttons */
+.prose * {
+  @apply break-words;
+}
