@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, BookOpen } from 'lucide-react';
+import { ArrowLeft, BookOpen, Brain } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/lib/axios';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -79,8 +79,12 @@ export default function DeckDetailPage({ params }: PageProps) {
 
   const handleStudy = () => {
     if (!deck || cards.length === 0) return;
-    // TODO: Navigate to study page
-    toast.info('Chức năng học thẻ đang phát triển');
+    router.push(`/decks/${deckId}/review`);
+  };
+
+  const handleLearn = () => {
+    if (!deck || cards.length === 0) return;
+    router.push(`/decks/${deckId}/learn`);
   };
 
   if (!deckId) {
@@ -139,12 +143,32 @@ export default function DeckDetailPage({ params }: PageProps) {
                 <TooltipTrigger asChild>
                   <span>
                     <Button
+                      onClick={handleLearn}
+                      disabled={cards.length === 0}
+                      variant="outline"
+                    >
+                      <Brain className="mr-2 h-4 w-4" />
+                      Học thuộc lòng
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {cards.length === 0 && (
+                  <TooltipContent>
+                    <p>Cần có ít nhất 1 thẻ để bắt đầu học</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
                       onClick={handleStudy}
                       disabled={cards.length === 0}
                       variant="default"
                     >
                       <BookOpen className="mr-2 h-4 w-4" />
-                      Học ngay
+                      Ôn tập SRS
                     </Button>
                   </span>
                 </TooltipTrigger>
@@ -157,7 +181,12 @@ export default function DeckDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          <CardList cards={cards} isLoading={isLoading} />
+          <CardList 
+            cards={cards} 
+            isLoading={isLoading}
+            onCardDeleted={fetchData}
+            onCardUpdated={fetchData}
+          />
         </main>
       </div>
     </TooltipProvider>
