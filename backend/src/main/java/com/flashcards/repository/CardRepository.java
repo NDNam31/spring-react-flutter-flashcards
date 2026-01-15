@@ -1,6 +1,7 @@
 package com.flashcards.repository;
 
 import com.flashcards.model.entity.Card;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -132,4 +133,43 @@ public interface CardRepository extends JpaRepository<Card, Long> {
         @Param("deckId") Long deckId,
         @Param("userId") Long userId
     );
+    
+    /**
+     * Search cards by term, definition, or example (case-insensitive)
+     * Security: Only returns cards from decks belonging to the specified user
+     *
+     * @param userId User ID who owns the decks
+     * @param searchTerm Search term to match against term, definition, or example
+     * @param pageable Pagination and limit
+     * @return List of matching cards
+     */
+    @Query("SELECT c FROM Card c " +
+           "INNER JOIN Deck d ON c.deckId = d.id " +
+           "WHERE d.userId = :userId " +
+           "AND c.isDeleted = false " +
+           "AND d.isDeleted = false " +
+           "AND (LOWER(c.term) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(c.definition) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(c.example) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    List<Card> searchCards(@Param("userId") Long userId, 
+                           @Param("searchTerm") String searchTerm,
+                           Pageable pageable);
+    
+    /**
+     * Count total search results for cards
+     *
+     * @param userId User ID who owns the decks
+     * @param searchTerm Search term
+     * @return Total count of matching cards
+     */
+    @Query("SELECT COUNT(c) FROM Card c " +
+           "INNER JOIN Deck d ON c.deckId = d.id " +
+           "WHERE d.userId = :userId " +
+           "AND c.isDeleted = false " +
+           "AND d.isDeleted = false " +
+           "AND (LOWER(c.term) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(c.definition) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(c.example) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    long countSearchCards(@Param("userId") Long userId, 
+                          @Param("searchTerm") String searchTerm);
 }

@@ -1,7 +1,10 @@
 package com.flashcards.repository;
 
 import com.flashcards.model.entity.Deck;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -61,4 +64,33 @@ public interface DeckRepository extends JpaRepository<Deck, Long> {
      * @return List of decks in the folder
      */
     List<Deck> findByFolderIdAndUserId(Long folderId, Long userId);
+    
+    /**
+     * Search decks by title or description (case-insensitive)
+     * Security: Only returns decks belonging to the specified user
+     *
+     * @param userId User ID who owns the decks
+     * @param searchTerm Search term to match against title or description
+     * @param pageable Pagination and limit
+     * @return List of matching decks
+     */
+    @Query("SELECT d FROM Deck d WHERE d.userId = :userId " +
+           "AND (LOWER(d.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(d.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    List<Deck> searchDecks(@Param("userId") Long userId, 
+                           @Param("searchTerm") String searchTerm,
+                           Pageable pageable);
+    
+    /**
+     * Count total search results for decks
+     *
+     * @param userId User ID who owns the decks
+     * @param searchTerm Search term
+     * @return Total count of matching decks
+     */
+    @Query("SELECT COUNT(d) FROM Deck d WHERE d.userId = :userId " +
+           "AND (LOWER(d.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
+           "OR LOWER(d.description) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    long countSearchDecks(@Param("userId") Long userId, 
+                          @Param("searchTerm") String searchTerm);
 }

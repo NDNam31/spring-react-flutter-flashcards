@@ -27,6 +27,7 @@ public class CardResponse {
     private String audioUrl;
     private Integer position;
     private List<String> tags;
+    private Boolean isStarred;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     

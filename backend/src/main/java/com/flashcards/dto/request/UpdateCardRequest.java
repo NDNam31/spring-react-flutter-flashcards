@@ -30,4 +30,6 @@ public class UpdateCardRequest {
     private String audioUrl;
 
     private List<String> tags;
+    
+    private Boolean isStarred;
 }

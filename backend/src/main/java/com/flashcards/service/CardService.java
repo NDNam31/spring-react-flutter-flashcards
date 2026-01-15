@@ -404,8 +404,9 @@ public class CardService {
 
     /**
      * Convert Card entity to CardResponse DTO with learning progress
+     * Public method for use by other services (e.g., SearchService)
      */
-    private CardResponse toCardResponse(Card card, User user) {
+    public CardResponse toCardResponse(Card card, User user) {
         // Get card progress for this user
         CardProgress progress = cardProgressRepository.findByUserIdAndCardId(user.getId(), card.getId())
                 .orElse(null);

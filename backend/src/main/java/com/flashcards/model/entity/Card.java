@@ -63,6 +63,10 @@ public class Card {
     @Column(name = "source_card_id", length = 255)
     private String sourceCardId;
 
+    @Column(name = "is_starred", nullable = false)
+    @Builder.Default
+    private Boolean isStarred = false;
+
     @Column(name = "is_deleted", nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;

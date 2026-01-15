@@ -33,4 +33,7 @@ public class CreateCardRequest {
     private String audioUrl;
 
     private List<String> tags;
+    
+    @Builder.Default
+    private Boolean isStarred = false;
 }

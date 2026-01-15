@@ -32,5 +32,5 @@ spring.jpa.properties.hibernate.jdbc.time_zone=UTC
 # IMPORTANT: Set GEMINI_API_KEY environment variable with your actual API key
 # Get your API key from: https://aistudio.google.com/app/apikey
 gemini.api.key=${GEMINI_API_KEY}
-gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent
+gemini.api.url=https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent
 gemini.max.cards=20
