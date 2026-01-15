@@ -29,6 +29,7 @@ import {
   Home,
   Brain,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 type TestPhase = "CONFIG" | "TESTING" | "RESULT";
 
@@ -50,8 +51,18 @@ export default function TestPage() {
   const [includeWritten, setIncludeWritten] = useState(true);
   const [includeTrueFalse, setIncludeTrueFalse] = useState(true);
 
+  // New config options
+  const [answerMode, setAnswerMode] = useState<"TERM" | "DEFINITION" | "MIXED">(
+    "MIXED"
+  );
+  const [onlyStarred, setOnlyStarred] = useState(false);
+  const [enableSmartGrading, setEnableSmartGrading] = useState(true);
+
   // Test form
   const { register, handleSubmit, setValue, watch } = useForm();
+
+  // Calculate starred cards count
+  const starredCount = cards.filter((c) => c.isStarred).length;
 
   // Fetch cards
   useEffect(() => {
@@ -88,6 +99,12 @@ export default function TestPage() {
       return;
     }
 
+    // Validate starred filter
+    if (onlyStarred && starredCount === 0) {
+      toast.error("Không có thẻ nào được đánh dấu sao");
+      return;
+    }
+
     const config: TestConfig = {
       numberOfQuestions:
         numberOfQuestions === -1 ? cards.length : numberOfQuestions,
@@ -96,6 +113,9 @@ export default function TestPage() {
         written: includeWritten,
         trueFalse: includeTrueFalse,
       },
+      answerMode,
+      onlyStarred,
+      enableSmartGrading,
     };
 
     const generatedQuestions = generateTestQuestions(cards, config);
@@ -123,7 +143,7 @@ export default function TestPage() {
       return q;
     });
 
-    const testResult = gradeTest(answeredQuestions);
+    const testResult = gradeTest(answeredQuestions, enableSmartGrading);
     setResult(testResult);
     setPhase("RESULT");
   };
@@ -144,22 +164,23 @@ export default function TestPage() {
   const handleReviewWrongCards = () => {
     if (!result) return;
 
-    // Get all wrong cards from test result
-    const wrongCards = result.questions
-      .filter((q) => !isAnswerCorrect(q))
-      .map((q) => cards.find((c) => c.id === q.cardId))
-      .filter((card): card is Card => card !== undefined);
+    // Get all wrong card IDs from test result
+    const wrongCardIds = result.questions
+      .filter((q) => !isAnswerCorrect(q, enableSmartGrading))
+      .map((q) => q.cardId)
+      .filter((id): id is number => id !== undefined);
 
-    if (wrongCards.length === 0) {
+    if (wrongCardIds.length === 0) {
       toast.info("Không có câu sai để học lại!");
       return;
     }
 
-    // Store wrong cards in sessionStorage for review page
-    sessionStorage.setItem("cramCards", JSON.stringify(wrongCards));
+    // Store wrong card IDs in sessionStorage for learn page
+    sessionStorage.setItem("cram_card_ids", JSON.stringify(wrongCardIds));
     
-    // Navigate to review page with special mode
-    router.push(`/decks/${deckId}/review?mode=wrongCards`);
+    // Navigate to learn page
+    toast.success(`Đang chuyển sang chế độ ôn tập ${wrongCardIds.length} câu sai...`);
+    router.push(`/decks/${deckId}/learn`);
   };
 
   if (isLoading) {
@@ -260,6 +281,103 @@ export default function TestPage() {
                 </div>
               </div>
 
+              {/* Answer Mode */}
+              <div>
+                <Label className="text-base font-medium mb-3 block">
+                  Định dạng câu hỏi
+                </Label>
+                <RadioGroup
+                  value={answerMode}
+                  onValueChange={(value) =>
+                    setAnswerMode(value as "TERM" | "DEFINITION" | "MIXED")
+                  }
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <RadioGroupItem value="TERM" id="answerTerm" />
+                      <label
+                        htmlFor="answerTerm"
+                        className="text-sm cursor-pointer"
+                      >
+                        Trả lời bằng <strong>Thuật ngữ</strong> (Hiển thị định
+                        nghĩa)
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <RadioGroupItem
+                        value="DEFINITION"
+                        id="answerDefinition"
+                      />
+                      <label
+                        htmlFor="answerDefinition"
+                        className="text-sm cursor-pointer"
+                      >
+                        Trả lời bằng <strong>Định nghĩa</strong> (Hiển thị
+                        thuật ngữ)
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <RadioGroupItem value="MIXED" id="answerMixed" />
+                      <label
+                        htmlFor="answerMixed"
+                        className="text-sm cursor-pointer"
+                      >
+                        <strong>Cả hai</strong> (Ngẫu nhiên)
+                      </label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Study Options */}
+              <div>
+                <Label className="text-base font-medium mb-3 block">
+                  Tùy chọn học tập
+                </Label>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <label
+                        htmlFor="onlyStarred"
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        Chỉ nghiên cứu các thuật ngữ có dấu sao (⭐)
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {starredCount > 0
+                          ? `${starredCount} thẻ được đánh dấu`
+                          : "Không có thẻ nào được đánh dấu"}
+                      </p>
+                    </div>
+                    <Switch
+                      id="onlyStarred"
+                      checked={onlyStarred}
+                      onCheckedChange={setOnlyStarred}
+                      disabled={starredCount === 0}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <label
+                        htmlFor="smartGrading"
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        Chấm điểm thông minh (Smart Grading)
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Chấp nhận lỗi chính tả nhỏ và bỏ qua dấu câu
+                      </p>
+                    </div>
+                    <Switch
+                      id="smartGrading"
+                      checked={enableSmartGrading}
+                      onCheckedChange={setEnableSmartGrading}
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Start button */}
               <Button
                 onClick={handleStartTest}
@@ -306,11 +424,29 @@ export default function TestPage() {
                       {index + 1}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm text-gray-500 mb-2">
-                        {question.type === "MCQ" && "Trắc nghiệm"}
-                        {question.type === "WRITTEN" && "Tự luận"}
-                        {question.type === "TRUE_FALSE" && "Đúng/Sai"}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-sm text-gray-500">
+                          {question.type === "MCQ" && "Trắc nghiệm"}
+                          {question.type === "WRITTEN" && "Tự luận"}
+                          {question.type === "TRUE_FALSE" && "Đúng/Sai"}
+                        </span>
+                        {question.questionMode && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                            {question.questionMode === "TERM"
+                              ? "Trả lời: Thuật ngữ"
+                              : "Trả lời: Định nghĩa"}
+                          </span>
+                        )}
                       </div>
+                      {/* Question prompt instruction */}
+                      {question.type === "WRITTEN" &&
+                        question.questionMode && (
+                          <div className="text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded mb-3">
+                            {question.questionMode === "TERM"
+                              ? "✍️ Hãy nhập Thuật ngữ cho định nghĩa sau:"
+                              : "✍️ Hãy nhập Định nghĩa cho thuật ngữ sau:"}
+                          </div>
+                        )}
                       <div
                         className="text-lg font-medium text-gray-800 prose prose-sm max-w-none"
                         dangerouslySetInnerHTML={{ __html: question.question }}
@@ -442,7 +578,7 @@ export default function TestPage() {
 
             <div className="space-y-6">
               {result.questions.map((question, index) => {
-                const isCorrect = isAnswerCorrect(question);
+                const isCorrect = isAnswerCorrect(question, enableSmartGrading);
 
                 return (
                   <div

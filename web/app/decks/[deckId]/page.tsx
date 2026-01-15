@@ -10,6 +10,7 @@ import {
   Grid3x3,
   ClipboardList,
   Flame,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/axios";
@@ -27,6 +28,7 @@ import {
 import { CardList } from "@/components/CardList";
 import { AddCardDialog } from "@/components/AddCardDialog";
 import { ImportExportDialog } from "@/components/ImportExportDialog";
+import { AiGenerateDialog } from "@/components/AiGenerateDialog";
 
 interface PageProps {
   params: Promise<{ deckId: string }>;
@@ -40,6 +42,7 @@ export default function DeckDetailPage({ params }: PageProps) {
   const [cards, setCards] = useState<Card[]>([]);
   const [difficultCount, setDifficultCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [aiDialogOpen, setAiDialogOpen] = useState(false);
 
   useEffect(() => {
     const initPage = async () => {
@@ -170,6 +173,21 @@ export default function DeckDetailPage({ params }: PageProps) {
                     deckId={parseInt(deckId)}
                     onCardAdded={fetchData}
                   />
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setAiDialogOpen(true)}
+                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Tạo bằng AI
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Dùng AI để tạo flashcards tự động</p>
+                    </TooltipContent>
+                  </Tooltip>
                   
                   <ImportExportDialog
                     deckId={parseInt(deckId)}
@@ -303,6 +321,16 @@ export default function DeckDetailPage({ params }: PageProps) {
             onCardUpdated={fetchData}
           />
         </main>
+        
+        {/* AI Generate Dialog */}
+        {deckId && (
+          <AiGenerateDialog
+            open={aiDialogOpen}
+            onOpenChange={setAiDialogOpen}
+            deckId={parseInt(deckId)}
+            onCardsCreated={fetchData}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

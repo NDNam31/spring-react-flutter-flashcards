@@ -72,6 +72,10 @@ export default function LearnModePage({ params }: PageProps) {
     "MCQ" | "WRITTEN" | "MIXED" | null
   >(null);
   const [isComplete, setIsComplete] = useState(false);
+  
+  // Cram mode (review wrong cards from test)
+  const [isCramMode, setIsCramMode] = useState(false);
+  const [cramCardCount, setCramCardCount] = useState(0);
 
   // TTS Hook
   const { speak } = useTTS();
@@ -112,16 +116,53 @@ export default function LearnModePage({ params }: PageProps) {
 
     setIsLoading(true);
     try {
-      const response = await api.get(`/decks/${deckId}/cards`);
-      const fetchedCards = response.data as Card[];
+      // Check if we're in cram mode (reviewing wrong cards from test)
+      const cramCardIdsStr = sessionStorage.getItem("cram_card_ids");
+      
+      if (cramCardIdsStr) {
+        // Cram mode: Load only specific cards
+        const cramCardIds: number[] = JSON.parse(cramCardIdsStr);
+        
+        // Fetch all cards first
+        const response = await api.get(`/decks/${deckId}/cards`);
+        const allCards = response.data as Card[];
+        
+        // Filter to only wrong cards
+        const wrongCards = allCards.filter((card) =>
+          cramCardIds.includes(card.id)
+        );
 
-      if (fetchedCards.length === 0) {
-        toast.error("Bộ thẻ này chưa có thẻ nào!");
-        router.push(`/decks/${deckId}`);
-        return;
+        if (wrongCards.length === 0) {
+          toast.error("Không tìm thấy thẻ nào để ôn tập!");
+          router.push(`/decks/${deckId}`);
+          return;
+        }
+
+        setCards(wrongCards);
+        setIsCramMode(true);
+        setCramCardCount(wrongCards.length);
+        
+        // Clear sessionStorage after loading
+        sessionStorage.removeItem("cram_card_ids");
+        
+        // Show notification
+        toast.success(`Đang ôn tập ${wrongCards.length} câu làm sai`, {
+          duration: 3000,
+        });
+      } else {
+        // Normal mode: Load all cards
+        const response = await api.get(`/decks/${deckId}/cards`);
+        const fetchedCards = response.data as Card[];
+
+        if (fetchedCards.length === 0) {
+          toast.error("Bộ thẻ này chưa có thẻ nào!");
+          router.push(`/decks/${deckId}`);
+          return;
+        }
+
+        setCards(fetchedCards);
+        setIsCramMode(false);
       }
-
-      setCards(fetchedCards);
     } catch (error: any) {
       const message = error.response?.data?.message || "Không thể tải dữ liệu";
       toast.error(message);
@@ -314,6 +355,14 @@ export default function LearnModePage({ params }: PageProps) {
               <p className="text-muted-foreground">
                 Chọn một trong các chế độ học bên dưới
               </p>
+              {isCramMode && (
+                <div className="mt-4 inline-flex items-center gap-2 bg-orange-100 text-orange-800 px-4 py-2 rounded-full">
+                  <Brain className="w-4 h-4" />
+                  <span className="font-medium">
+                    Đang ôn tập {cramCardCount} câu làm sai
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
@@ -498,9 +547,17 @@ export default function LearnModePage({ params }: PageProps) {
           </Button>
           <div className="mt-4">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-2xl font-bold">
-                {currentQuestion.type === "MCQ" ? "Trắc nghiệm" : "Gõ phím"}
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold">
+                  {currentQuestion.type === "MCQ" ? "Trắc nghiệm" : "Gõ phím"}
+                </h1>
+                {isCramMode && (
+                  <Badge variant="destructive" className="bg-orange-500">
+                    <Brain className="w-3 h-3 mr-1" />
+                    Ôn tập câu sai
+                  </Badge>
+                )}
+              </div>
               <Badge variant="secondary">
                 {currentIndex + 1} / {questions.length}
               </Badge>

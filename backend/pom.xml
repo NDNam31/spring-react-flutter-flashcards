@@ -54,6 +54,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Flyway Database Migration -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
         <!-- Hypersistence Utils for PostgreSQL Array Support -->
         <dependency>
             <groupId>io.hypersistence</groupId>

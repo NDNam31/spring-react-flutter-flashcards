@@ -8,6 +8,7 @@ export interface Card {
   audioUrl?: string;
   position: number;
   tags: string[];
+  isStarred?: boolean;
   learningState:
     | "NEW"
     | "LEARNING_MCQ"

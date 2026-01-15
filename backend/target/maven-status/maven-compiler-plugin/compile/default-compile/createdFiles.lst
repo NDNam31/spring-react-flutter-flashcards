@@ -71,6 +71,7 @@ com\flashcards\dto\request\UpdateDeckRequest$UpdateDeckRequestBuilder.class
 com\flashcards\repository\StudyLogRepository.class
 com\flashcards\model\entity\Deck$DeckBuilder.class
 com\flashcards\dto\response\SearchResultResponse.class
+com\flashcards\model\enums\AnswerMode.class
 com\flashcards\model\enums\Grade.class
 com\flashcards\dto\request\ReviewRequest$ReviewRequestBuilder.class
 com\flashcards\dto\response\SearchResultResponse$SearchResultResponseBuilder.class

@@ -1,5 +1,6 @@
 E:\du_an\spring-react-flutter-flashcards\backend\src\main\java\com\flashcards\controller\CardController.java
 E:\du_an\spring-react-flutter-flashcards\backend\src\main\java\com\flashcards\exception\FolderNotFoundException.java
+E:\du_an\spring-react-flutter-flashcards\backend\src\main\java\com\flashcards\model\enums\AnswerMode.java
 E:\du_an\spring-react-flutter-flashcards\backend\src\main\java\com\flashcards\dto\request\BulkCreateCardsRequest.java
 E:\du_an\spring-react-flutter-flashcards\backend\src\main\java\com\flashcards\dto\request\CreateCardRequest.java
 E:\du_an\spring-react-flutter-flashcards\backend\src\main\java\com\flashcards\dto\response\SearchResultResponse.java
