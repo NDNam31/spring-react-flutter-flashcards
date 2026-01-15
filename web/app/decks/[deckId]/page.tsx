@@ -75,6 +75,14 @@ export default function DeckDetailPage({ params }: PageProps) {
         api.get(`/decks/${deckId}/cards/difficult/count`),
       ]);
 
+      const starredData = cardsResponse.data.map((c: any) => ({ 
+        id: c.id, 
+        term: c.term.substring(0, 30), 
+        isStarred: c.isStarred 
+      }));
+      console.log("📦 Fetched cards with isStarred:");
+      console.table(starredData);
+      
       setDeck(deckResponse.data);
       setCards(cardsResponse.data);
       setDifficultCount(difficultCountResponse.data);
@@ -157,55 +165,60 @@ export default function DeckDetailPage({ params }: PageProps) {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold">
-                Danh sách thẻ ({cards.length})
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Quản lý các thẻ học tập trong bộ thẻ này
-              </p>
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  Danh sách thẻ ({cards.length})
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Quản lý các thẻ học tập trong bộ thẻ này
+                </p>
+              </div>
+              
+              {/* Row 1: Quản lý thẻ */}
+              <div className="flex gap-2">
+                {deckId && (
+                  <>
+                    <AddCardDialog
+                      deckId={parseInt(deckId)}
+                      onCardAdded={fetchData}
+                    />
+                    
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          onClick={() => setAiDialogOpen(true)}
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                        >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Tạo bằng AI
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Dùng AI để tạo flashcards tự động</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    
+                    <ImportExportDialog
+                      deckId={parseInt(deckId)}
+                      onImportSuccess={fetchData}
+                    />
+
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push(`/decks/${deckId}/bulk-add`)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Thêm hàng loạt
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex gap-2">
-              {deckId && (
-                <>
-                  <AddCardDialog
-                    deckId={parseInt(deckId)}
-                    onCardAdded={fetchData}
-                  />
-                  
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={() => setAiDialogOpen(true)}
-                        className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                      >
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Tạo bằng AI
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Dùng AI để tạo flashcards tự động</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  <ImportExportDialog
-                    deckId={parseInt(deckId)}
-                    onImportSuccess={fetchData}
-                  />
-                </>
-              )}
 
-              {deckId && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push(`/decks/${deckId}/bulk-add`)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Thêm hàng loạt
-                </Button>
-              )}
-
+            {/* Row 2: Học tập */}
+            <div className="flex justify-end gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span>

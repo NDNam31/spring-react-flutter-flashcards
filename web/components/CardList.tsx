@@ -6,6 +6,7 @@ import { api } from "@/lib/axios";
 import { Card } from "@/types/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -32,7 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EditCardDialog } from "@/components/EditCardDialog";
-import { BookOpen, MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { BookOpen, MoreHorizontal, Pencil, Trash, Trash2, Star } from "lucide-react";
 
 interface CardListProps {
   cards: Card[];
@@ -63,6 +64,8 @@ export function CardList({
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
+  const [showBulkDeleteAlert, setShowBulkDeleteAlert] = useState(false);
 
   const handleDelete = async () => {
     if (!deletingCard) return;
@@ -81,6 +84,69 @@ export function CardList({
       setIsDeleting(false);
     }
   };
+
+  const handleBulkDelete = async () => {
+    if (selectedCards.size === 0) return;
+
+    setIsDeleting(true);
+    try {
+      await api.delete('/cards/bulk-delete', {
+        data: Array.from(selectedCards)
+      });
+      toast.success(`Đã xóa ${selectedCards.size} thẻ thành công!`);
+      setSelectedCards(new Set());
+      setShowBulkDeleteAlert(false);
+      onCardDeleted?.();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || "Không thể xóa các thẻ. Vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const toggleCardSelection = (cardId: number) => {
+    const newSelection = new Set(selectedCards);
+    if (newSelection.has(cardId)) {
+      newSelection.delete(cardId);
+    } else {
+      newSelection.add(cardId);
+    }
+    setSelectedCards(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedCards.size === cards.length) {
+      setSelectedCards(new Set());
+    } else {
+      setSelectedCards(new Set(cards.map(card => card.id)));
+    }
+  };
+
+  const handleToggleStar = async (card: Card, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newStarredState = !card.isStarred;
+    
+    try {
+      const response = await api.put(`/cards/${card.id}`, {
+        term: card.term,
+        definition: card.definition,
+        example: card.example || "",
+        isStarred: newStarredState
+      });
+      
+      console.log("⭐ Star toggle response - isStarred:", response.data.isStarred, "Full data:", response.data);
+      toast.success(newStarredState ? "Đã đánh dấu sao ⭐" : "Đã bỏ dấu sao");
+      
+      // Trigger re-fetch to get latest data
+      await onCardUpdated?.();
+    } catch (error: any) {
+      console.error("Toggle star error:", error);
+      toast.error(error.response?.data?.message || "Không thể cập nhật thẻ");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="border rounded-lg">
@@ -142,11 +208,42 @@ export function CardList({
 
   return (
     <>
+      {/* Bulk Actions Bar */}
+      {selectedCards.size > 0 && (
+        <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={selectedCards.size === cards.length}
+              onCheckedChange={toggleSelectAll}
+            />
+            <span className="font-medium text-blue-900">
+              Đã chọn {selectedCards.size} thẻ
+            </span>
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowBulkDeleteAlert(true)}
+            disabled={isDeleting}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Xóa {selectedCards.size} thẻ đã chọn
+          </Button>
+        </div>
+      )}
+
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={selectedCards.size === cards.length && cards.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
               <TableHead className="w-16">No.</TableHead>
+              <TableHead className="w-12">⭐</TableHead>
               <TableHead>Thuật ngữ</TableHead>
               <TableHead>Định nghĩa</TableHead>
               <TableHead>Ví dụ</TableHead>
@@ -156,9 +253,27 @@ export function CardList({
           </TableHeader>
           <TableBody>
             {cards.map((card, index) => (
-              <TableRow key={card.id}>
+              <TableRow key={card.id} className={selectedCards.has(card.id) ? "bg-blue-50" : ""}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedCards.has(card.id)}
+                    onCheckedChange={() => toggleCardSelection(card.id)}
+                  />
+                </TableCell>
                 <TableCell className="font-medium text-muted-foreground">
                   {index + 1}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => handleToggleStar(card, e)}
+                  >
+                    <Star
+                      className={`h-4 w-4 ${card.isStarred ? "fill-yellow-400 text-yellow-400" : "text-gray-400"}`}
+                    />
+                  </Button>
                 </TableCell>
                 <TableCell className="font-medium">
                   <div
@@ -248,6 +363,30 @@ export function CardList({
               className="bg-red-600 hover:bg-red-700"
             >
               {isDeleting ? "Đang xóa..." : "Xóa"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={showBulkDeleteAlert} onOpenChange={setShowBulkDeleteAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa nhiều thẻ</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa <strong>{selectedCards.size} thẻ</strong> đã chọn?
+              <br />
+              Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? "Đang xóa..." : `Xóa ${selectedCards.size} thẻ`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

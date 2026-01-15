@@ -183,6 +183,26 @@ public class CardController {
     }
 
     /**
+     * Delete multiple cards
+     * DELETE /cards/bulk-delete
+     * @param userDetails Current authenticated user
+     * @param cardIds List of card IDs to delete
+     * @return No content
+     */
+    @DeleteMapping("/cards/bulk-delete")
+    public ResponseEntity<Void> deleteCards(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody List<Long> cardIds) {
+        
+        User user = getCurrentUser(userDetails);
+        log.info("DELETE /api/v1/cards/batch - userId: {}, cardIds: {}", user.getId(), cardIds);
+
+        cardService.deleteCards(user, cardIds);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Update card position (for reordering)
      * PATCH /api/v1/cards/{id}/position
      *

@@ -182,6 +182,11 @@ public class CardService {
         card.setImageUrl(request.getImageUrl());
         card.setAudioUrl(request.getAudioUrl());
         card.setTags(request.getTags());
+        
+        // Update isStarred if provided
+        if (request.getIsStarred() != null) {
+            card.setIsStarred(request.getIsStarred());
+        }
 
         Card updatedCard = cardRepository.save(card);
         log.info("Card updated: id={}", cardId);
@@ -213,6 +218,45 @@ public class CardService {
 
         log.info("Card soft deleted: id={}, deckId={}, userId={}", 
                  cardId, card.getDeckId(), user.getId());
+    }
+
+    /**
+     * Delete multiple cards (bulk delete)
+     *
+     * @param user Authenticated user
+     * @param cardIds List of card IDs to delete
+     * @throws CardNotFoundException if any card not found
+     * @throws UnauthorizedException if user doesn't own any of the cards
+     */
+    @Transactional
+    public void deleteCards(User user, List<Long> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) {
+            log.warn("Empty card IDs list for bulk delete: userId={}", user.getId());
+            return;
+        }
+
+        log.info("Soft deleting {} cards: user={}, cardIds={}", cardIds.size(), user.getId(), cardIds);
+
+        // Fetch all cards in one query and verify ownership
+        List<Card> cards = cardRepository.findAllById(cardIds);
+        
+        if (cards.size() != cardIds.size()) {
+            log.error("Some cards not found. Requested: {}, Found: {}", cardIds.size(), cards.size());
+            throw new CardNotFoundException("Một hoặc nhiều thẻ không tồn tại");
+        }
+
+        // Verify ownership for all cards
+        for (Card card : cards) {
+            if (!card.getDeck().getUserId().equals(user.getId())) {
+                log.error("User {} does not own card {}", user.getId(), card.getId());
+                throw new UnauthorizedException("Bạn không có quyền xóa thẻ này");
+            }
+            card.setIsDeleted(true);
+        }
+
+        // Bulk save
+        cardRepository.saveAll(cards);
+        log.info("Bulk deleted {} cards for userId={}", cards.size(), user.getId());
     }
 
     /**
@@ -421,6 +465,7 @@ public class CardService {
                 .audioUrl(card.getAudioUrl())
                 .position(card.getPosition())
                 .tags(card.getTags())
+                .isStarred(card.getIsStarred())
                 .createdAt(card.getCreatedAt())
                 .updatedAt(card.getUpdatedAt());
         

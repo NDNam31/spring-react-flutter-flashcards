@@ -13,6 +13,7 @@ import {
   ListChecks,
   Shuffle,
   Volume2,
+  Brain,
 } from "lucide-react";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
