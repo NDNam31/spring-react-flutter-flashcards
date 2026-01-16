@@ -8,6 +8,8 @@ import confetti from "canvas-confetti";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Card } from "@/types/card";
+import { useStudyTimer } from "@/hooks/useStudyTimer";
+import { StudyMode } from "@/types/statistics";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Flashcard } from "@/components/Flashcard";
@@ -31,6 +33,13 @@ export default function ReviewPage({ params }: PageProps) {
   const [reviewedCount, setReviewedCount] = useState(0);
   const [hasShownConfetti, setHasShownConfetti] = useState(false);
   const [isCramMode, setIsCramMode] = useState(false);
+
+  // Study Timer Hook - Track time spent in SRS review mode
+  const { elapsedSeconds, incrementCardsStudied } = useStudyTimer({
+    mode: StudyMode.SRS,
+    deckId: deckId ? parseInt(deckId) : undefined,
+    enabled: isReviewing && deckId !== null,
+  });
 
   useEffect(() => {
     const initPage = async () => {
@@ -151,6 +160,9 @@ export default function ReviewPage({ params }: PageProps) {
     setIsReviewing(true);
     try {
       await api.post(`/cards/${currentCard.id}/review`, { grade });
+
+      // Track card review
+      incrementCardsStudied();
 
       // Remove card from due list and move to next
       const newDueCards = dueCards.filter((_, index) => index !== currentIndex);

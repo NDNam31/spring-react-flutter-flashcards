@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { Card } from "@/types/card";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useStudyTimer } from "@/hooks/useStudyTimer";
+import { StudyMode } from "@/types/statistics";
 import {
   generateTestQuestions,
   gradeTest,
@@ -60,6 +62,13 @@ export default function TestPage() {
 
   // Test form
   const { register, handleSubmit, setValue, watch } = useForm();
+
+  // Study Timer Hook - Track time spent in test mode
+  const { elapsedSeconds, incrementCardsStudied, stopTracking } = useStudyTimer({
+    mode: StudyMode.TEST,
+    deckId: deckId,
+    enabled: phase === "TESTING",
+  });
 
   // Calculate starred cards count
   const starredCount = cards.filter((c) => c.isStarred).length;
@@ -124,7 +133,7 @@ export default function TestPage() {
   };
 
   // Submit test
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     // Update questions with user answers
     const answeredQuestions = questions.map((q) => {
       const answer = data[q.id];
@@ -144,6 +153,15 @@ export default function TestPage() {
     });
 
     const testResult = gradeTest(answeredQuestions, enableSmartGrading);
+    
+    // Track all cards as studied
+    answeredQuestions.forEach(() => {
+      incrementCardsStudied();
+    });
+
+    // Save study session immediately when test is submitted
+    await stopTracking();
+
     setResult(testResult);
     setPhase("RESULT");
   };

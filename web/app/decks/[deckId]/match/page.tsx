@@ -8,6 +8,8 @@ import confetti from "canvas-confetti";
 import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Card } from "@/types/card";
+import { useStudyTimer } from "@/hooks/useStudyTimer";
+import { StudyMode } from "@/types/statistics";
 import { Button } from "@/components/ui/button";
 import { Card as UICard, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +46,13 @@ export default function MatchGamePage({ params }: PageProps) {
   // Timer
   const [timer, setTimer] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
+
+  // Study Timer Hook - Track time spent in match mode
+  const { elapsedSeconds, incrementCardsStudied, stopTracking } = useStudyTimer({
+    mode: StudyMode.MATCH,
+    deckId: deckId ? parseInt(deckId) : undefined,
+    enabled: timerRunning && !isComplete && deckId !== null,
+  });
 
   useEffect(() => {
     const initPage = async () => {
@@ -173,6 +182,9 @@ export default function MatchGamePage({ params }: PageProps) {
         setSelectedPieces([]);
         setIsChecking(false);
 
+        // Track card as studied
+        incrementCardsStudied();
+
         // Check if game complete
         const newMatchedCount = matchedPieceIds.size + 2;
         if (newMatchedCount === pieces.length) {
@@ -191,9 +203,10 @@ export default function MatchGamePage({ params }: PageProps) {
     }
   };
 
-  const handleGameComplete = () => {
+  const handleGameComplete = async () => {
     setTimerRunning(false);
     setIsComplete(true);
+    await stopTracking(); // Save study session
 
     // Confetti animation
     const duration = 3000;

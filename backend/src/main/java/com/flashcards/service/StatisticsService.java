@@ -1,9 +1,12 @@
 package com.flashcards.service;
 
+import com.flashcards.dto.response.MasteryLevelStatistics;
 import com.flashcards.dto.statistics.StatisticsSummaryDTO;
 import com.flashcards.model.entity.Card;
+import com.flashcards.model.entity.CardProgress;
 import com.flashcards.model.entity.StudyLog;
 import com.flashcards.model.entity.User;
+import com.flashcards.model.enums.LearningState;
 import com.flashcards.repository.CardProgressRepository;
 import com.flashcards.repository.CardRepository;
 import com.flashcards.repository.StudyLogRepository;
@@ -179,6 +182,141 @@ public class StatisticsService {
                 .learningCards(learningCards)
                 .reviewingCards(reviewingCards)
                 .relearningCards(0L)
+                .build();
+    }
+
+    /**
+     * Get mastery level statistics for a user
+     * Categorizes cards into: New, Still Learning, Almost Done, Mastered
+     */
+    public MasteryLevelStatistics getMasteryLevelStatistics(Long userId) {
+        log.info("Getting mastery level statistics for user: {}", userId);
+
+        // Get all cards for this user through their decks
+        List<Card> allCards = cardRepository.findAllByDeck_User_Id(userId);
+
+        int newCards = 0;
+        int stillLearning = 0;
+        int almostDone = 0;
+        int mastered = 0;
+
+        for (Card card : allCards) {
+            // Get card progress for this user
+            Optional<CardProgress> progressOpt = cardProgressRepository
+                    .findByUserIdAndCardId(userId, card.getId());
+
+            if (progressOpt.isEmpty()) {
+                // No progress = new card
+                newCards++;
+            } else {
+                CardProgress progress = progressOpt.get();
+                LearningState state = progress.getLearningState();
+                Integer interval = progress.getInterval();
+
+                if (state == LearningState.LEARNING_MCQ || state == LearningState.LEARNING_TYPING || state == LearningState.RELEARNING) {
+                    // Still learning
+                    stillLearning++;
+                } else if (state == LearningState.REVIEWING) {
+                    // Reviewing cards are categorized by interval
+                    if (interval != null && interval >= 21) {
+                        // Mastered (21+ days interval)
+                        mastered++;
+                    } else {
+                        // Almost done (< 21 days interval)
+                        almostDone++;
+                    }
+                } else {
+                    // Default for other states
+                    newCards++;
+                }
+            }
+        }
+
+        int total = newCards + stillLearning + almostDone + mastered;
+
+        // Calculate percentages
+        double newPercentage = total > 0 ? (newCards * 100.0 / total) : 0.0;
+        double stillLearningPercentage = total > 0 ? (stillLearning * 100.0 / total) : 0.0;
+        double almostDonePercentage = total > 0 ? (almostDone * 100.0 / total) : 0.0;
+        double masteredPercentage = total > 0 ? (mastered * 100.0 / total) : 0.0;
+
+        log.info("Mastery levels for user {}: New={}, Learning={}, AlmostDone={}, Mastered={}", 
+                userId, newCards, stillLearning, almostDone, mastered);
+
+        return MasteryLevelStatistics.builder()
+                .newCards(newCards)
+                .stillLearning(stillLearning)
+                .almostDone(almostDone)
+                .mastered(mastered)
+                .total(total)
+                .newCardsPercentage(newPercentage)
+                .stillLearningPercentage(stillLearningPercentage)
+                .almostDonePercentage(almostDonePercentage)
+                .masteredPercentage(masteredPercentage)
+                .build();
+    }
+
+    /**
+     * Get mastery level statistics for a specific deck
+     */
+    public MasteryLevelStatistics getMasteryLevelStatisticsByDeck(Long userId, Long deckId) {
+        log.info("Getting mastery level statistics for user: {} and deck: {}", userId, deckId);
+
+        // Get all cards for this deck (already filters deleted cards via @Where clause)
+        List<Card> allCards = cardRepository.findAllByDeckIdOrderByPositionAsc(deckId);
+
+        int newCards = 0;
+        int stillLearning = 0;
+        int almostDone = 0;
+        int mastered = 0;
+
+        for (Card card : allCards) {
+            // Get card progress for this user
+            Optional<CardProgress> progressOpt = cardProgressRepository
+                    .findByUserIdAndCardId(userId, card.getId());
+
+            if (progressOpt.isEmpty()) {
+                newCards++;
+            } else {
+                CardProgress progress = progressOpt.get();
+                LearningState state = progress.getLearningState();
+                Integer interval = progress.getInterval();
+
+                if (state == LearningState.LEARNING_MCQ || state == LearningState.LEARNING_TYPING || state == LearningState.RELEARNING) {
+                    stillLearning++;
+                } else if (state == LearningState.REVIEWING) {
+                    if (interval != null && interval >= 21) {
+                        mastered++;
+                    } else {
+                        almostDone++;
+                    }
+                } else {
+                    newCards++;
+                }
+            }
+        }
+
+        int total = newCards + stillLearning + almostDone + mastered;
+
+        // Calculate percentages
+        double newPercentage = total > 0 ? (newCards * 100.0 / total) : 0.0;
+        double stillLearningPercentage = total > 0 ? (stillLearning * 100.0 / total) : 0.0;
+        double almostDonePercentage = total > 0 ? (almostDone * 100.0 / total) : 0.0;
+        double masteredPercentage = total > 0 ? (mastered * 100.0 / total) : 0.0;
+
+        log.info("Mastery levels for user {} deck {}: New={}, Learning={}, AlmostDone={}, Mastered={}", 
+                userId, deckId, newCards, stillLearning, almostDone, mastered);
+
+        return MasteryLevelStatistics.builder()
+                .newCards(newCards)
+                .stillLearning(stillLearning)
+                .almostDone(almostDone)
+                .mastered(mastered)
+                .total(total)
+                .newCardsPercentage(newPercentage)
+                .stillLearningPercentage(stillLearningPercentage)
+                .almostDonePercentage(almostDonePercentage)
+                .masteredPercentage(masteredPercentage)
                 .build();
     }
 }

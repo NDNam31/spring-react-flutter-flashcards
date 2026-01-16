@@ -11,6 +11,8 @@ import {
   ClipboardList,
   Flame,
   Sparkles,
+  BarChart3,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/axios";
@@ -25,10 +27,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CardList } from "@/components/CardList";
 import { AddCardDialog } from "@/components/AddCardDialog";
 import { ImportExportDialog } from "@/components/ImportExportDialog";
 import { AiGenerateDialog } from "@/components/AiGenerateDialog";
+import { StudyAnalytics } from "@/components/StudyAnalytics";
 
 interface PageProps {
   params: Promise<{ deckId: string }>;
@@ -43,6 +47,7 @@ export default function DeckDetailPage({ params }: PageProps) {
   const [difficultCount, setDifficultCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("cards");
 
   useEffect(() => {
     const initPage = async () => {
@@ -165,6 +170,21 @@ export default function DeckDetailPage({ params }: PageProps) {
 
         {/* Main Content */}
         <main className="container mx-auto px-4 py-8">
+          {/* Tabs for Cards and Analytics */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="cards" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Danh sách thẻ ({cards.length})
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Thống kê
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Cards Tab */}
+            <TabsContent value="cards" className="mt-0">
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -333,6 +353,13 @@ export default function DeckDetailPage({ params }: PageProps) {
             onCardDeleted={fetchData}
             onCardUpdated={fetchData}
           />
+            </TabsContent>
+
+            {/* Analytics Tab */}
+            <TabsContent value="analytics" className="mt-0">
+              {deckId && <StudyAnalytics deckId={parseInt(deckId)} />}
+            </TabsContent>
+          </Tabs>
         </main>
         
         {/* AI Generate Dialog */}

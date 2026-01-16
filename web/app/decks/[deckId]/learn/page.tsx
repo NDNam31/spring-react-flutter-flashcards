@@ -23,6 +23,8 @@ import { Card } from "@/types/card";
 import { Question, AnswerResult } from "@/types/learn";
 import { stripHtml } from "@/lib/htmlUtils";
 import { useTTS } from "@/hooks/use-tts";
+import { useStudyTimer } from "@/hooks/useStudyTimer";
+import { StudyMode } from "@/types/statistics";
 import {
   generateMultipleChoiceQuestions,
   generateWrittenQuestions,
@@ -80,6 +82,13 @@ export default function LearnModePage({ params }: PageProps) {
 
   // TTS Hook
   const { speak } = useTTS();
+
+  // Study Timer Hook - Track time spent in learn mode
+  const { elapsedSeconds, incrementCardsStudied, stopTracking } = useStudyTimer({
+    mode: StudyMode.LEARN,
+    deckId: deckId ? parseInt(deckId) : undefined,
+    enabled: hasStarted && !isComplete && deckId !== null,
+  });
 
   useEffect(() => {
     const initPage = async () => {
@@ -195,7 +204,7 @@ export default function LearnModePage({ params }: PageProps) {
     setSelectedOption(optionIndex);
   };
 
-  const handleNextMCQ = () => {
+  const handleNextMCQ = async () => {
     if (selectedOption === null) {
       toast.error("Vui lòng chọn đáp án!");
       return;
@@ -213,6 +222,9 @@ export default function LearnModePage({ params }: PageProps) {
     };
     setAnswers([...answers, result]);
 
+    // Track card as studied
+    incrementCardsStudied();
+
     if (isCorrect) {
       toast.success("Chính xác! 🎉");
     } else {
@@ -224,6 +236,7 @@ export default function LearnModePage({ params }: PageProps) {
       setSelectedOption(null);
     } else {
       setIsComplete(true);
+      await stopTracking(); // Save study session
       triggerConfetti();
     }
   };
@@ -245,8 +258,11 @@ export default function LearnModePage({ params }: PageProps) {
     setShowFeedback(true);
   };
 
-  const handleContinueWritten = () => {
+  const handleContinueWritten = async () => {
     const currentQuestion = questions[currentIndex];
+
+    // Track card as studied
+    incrementCardsStudied();
 
     const result: AnswerResult = {
       isCorrect: isCorrectAnswer,
@@ -267,6 +283,7 @@ export default function LearnModePage({ params }: PageProps) {
       setShowFeedback(false);
     } else {
       setIsComplete(true);
+      await stopTracking(); // Save study session
       triggerConfetti();
     }
   };

@@ -1,0 +1,25 @@
+-- Migration for Study Sessions
+-- Add study_sessions table for time tracking
+
+CREATE TABLE IF NOT EXISTS study_sessions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    deck_id BIGINT,
+    mode VARCHAR(20) NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP NOT NULL,
+    duration_seconds INTEGER NOT NULL,
+    cards_studied INTEGER,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_study_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_study_sessions_deck FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE SET NULL,
+    CONSTRAINT chk_study_sessions_duration CHECK (duration_seconds >= 0),
+    CONSTRAINT chk_study_sessions_time CHECK (end_time >= start_time)
+);
+
+-- Indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_study_sessions_user_id ON study_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_study_sessions_mode ON study_sessions(mode);
+CREATE INDEX IF NOT EXISTS idx_study_sessions_start_time ON study_sessions(start_time);
+CREATE INDEX IF NOT EXISTS idx_study_sessions_deck_id ON study_sessions(deck_id);
