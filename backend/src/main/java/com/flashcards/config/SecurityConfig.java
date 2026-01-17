@@ -97,11 +97,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Allow requests from Next.js frontend
+        // Allow requests from Next.js frontend (development and production)
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000",
             "http://localhost:3001",
-            "https://your-production-domain.com"
+            "https://spring-react-flutter-flashcards.vercel.app"
         ));
         
         // Allow all HTTP methods
