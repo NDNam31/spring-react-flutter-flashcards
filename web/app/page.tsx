@@ -4,10 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, LogOut, FolderPlus, Folder as FolderIcon, Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Deck } from "@/types/deck";
-import { Folder } from "@/types/folder";
 import { DeckCard } from "@/components/DeckCard";
 import { FolderCard } from "@/components/FolderCard";
 import { CreateDeckDialog } from "@/components/CreateDeckDialog";
@@ -28,43 +25,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "next-themes";
+import { useFolders, useUncategorizedDecks } from "@/hooks/useFolders";
 
 export default function Home() {
   const router = useRouter();
   const { isAuthenticated, logout, user } = useAuthStore();
   const { theme, setTheme } = useTheme();
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [uncategorizedDecks, setUncategorizedDecks] = useState<Deck[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("folders");
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const closeMenuTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Use SWR hooks for auto-caching và revalidation
+  const { folders, isLoading: foldersLoading, mutate: mutateFolders } = useFolders();
+  const { decks: uncategorizedDecks, isLoading: decksLoading, mutate: mutateDecks } = useUncategorizedDecks();
+
+  const isLoading = foldersLoading || decksLoading;
 
   useEffect(() => {
     if (!isAuthenticated()) {
       router.push("/login");
       return;
     }
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const [foldersRes, decksRes] = await Promise.all([
-        api.get("/folders"),
-        api.get("/folders/uncategorized"),
-      ]);
-      setFolders(foldersRes.data);
-      setUncategorizedDecks(decksRes.data);
-    } catch (error: any) {
-      const message =
-        error.response?.data?.message || "Không thể tải dữ liệu";
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [isAuthenticated, router]);
 
   const handleLogout = () => {
     logout();
@@ -180,11 +162,11 @@ export default function Home() {
           <TabsList className="mb-6">
             <TabsTrigger value="folders" className="gap-2">
               <FolderIcon className="h-4 w-4" />
-              Folders ({folders.length})
+              Folders ({folders?.length || 0})
             </TabsTrigger>
             <TabsTrigger value="uncategorized" className="gap-2">
               <BookOpen className="h-4 w-4" />
-              Bộ thẻ lẻ ({uncategorizedDecks.length})
+              Bộ thẻ lẻ ({uncategorizedDecks?.length || 0})
             </TabsTrigger>
           </TabsList>
 
@@ -192,7 +174,7 @@ export default function Home() {
           <TabsContent value="folders" className="mt-0">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Thư mục</h3>
-              <CreateFolderDialog onFolderCreated={fetchData} />
+              <CreateFolderDialog onFolderCreated={() => mutateFolders()} />
             </div>
             
             {isLoading ? (
@@ -201,7 +183,7 @@ export default function Home() {
                   <DeckSkeleton key={i} />
                 ))}
               </div>
-            ) : folders.length === 0 ? (
+            ) : !folders || folders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-lg">
                 <div className="rounded-full bg-muted p-6 mb-4">
                   <FolderIcon className="h-12 w-12 text-muted-foreground" />
@@ -210,16 +192,16 @@ export default function Home() {
                 <p className="text-muted-foreground mb-6 max-w-md">
                   Tạo folder để tổ chức các bộ thẻ của bạn một cách khoa học hơn
                 </p>
-                <CreateFolderDialog onFolderCreated={fetchData} />
+                <CreateFolderDialog onFolderCreated={() => mutateFolders()} />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {folders.map((folder) => (
+                {folders?.map((folder) => (
                   <FolderCard
                     key={folder.id}
                     folder={folder}
-                    onDeleted={fetchData}
-                    onUpdated={fetchData}
+                    onDeleted={() => mutateFolders()}
+                    onUpdated={() => mutateFolders()}
                   />
                 ))}
               </div>
@@ -230,7 +212,7 @@ export default function Home() {
           <TabsContent value="uncategorized" className="mt-0">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Bộ thẻ chưa phân loại</h3>
-              <CreateDeckDialog onDeckCreated={fetchData} />
+              <CreateDeckDialog onDeckCreated={() => mutateDecks()} />
             </div>
             
             {isLoading ? (
@@ -239,7 +221,7 @@ export default function Home() {
                   <DeckSkeleton key={i} />
                 ))}
               </div>
-            ) : uncategorizedDecks.length === 0 ? (
+            ) : !uncategorizedDecks || uncategorizedDecks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed rounded-lg">
                 <div className="rounded-full bg-muted p-6 mb-4">
                   <BookOpen className="h-12 w-12 text-muted-foreground" />
@@ -248,17 +230,20 @@ export default function Home() {
                 <p className="text-muted-foreground mb-6 max-w-md">
                   Tất cả bộ thẻ của bạn đã được sắp xếp vào folder. Hoặc tạo bộ thẻ mới!
                 </p>
-                <CreateDeckDialog onDeckCreated={fetchData} />
+                <CreateDeckDialog onDeckCreated={() => mutateDecks()} />
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {uncategorizedDecks.map((deck) => (
+                {uncategorizedDecks?.map((deck) => (
                   <DeckCard
                     key={deck.id}
                     deck={deck}
-                    onDeleted={fetchData}
-                    onUpdated={fetchData}
-                    onMoved={fetchData}
+                    onDeleted={() => mutateDecks()}
+                    onUpdated={() => mutateDecks()}
+                    onMoved={() => {
+                      mutateDecks();
+                      mutateFolders();
+                    }}
                   />
                 ))}
               </div>

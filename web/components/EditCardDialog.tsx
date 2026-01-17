@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { mutate } from "swr";
 import { api } from "@/lib/axios";
 import { uploadImageToCloudinary, validateImageFile } from "@/lib/cloudinary";
 import { Card } from "@/types/card";
@@ -118,22 +119,34 @@ export function EditCardDialog({
     }
 
     setIsLoading(true);
-    try {
-      await api.put(`/cards/${card.id}`, {
-        term,
-        definition,
-        example: example || undefined,
-        imageUrl: imageUrl || undefined,
-      });
+    
+    const payload = {
+      term,
+      definition,
+      example: example || undefined,
+      imageUrl: imageUrl || undefined,
+    };
 
+    try {
+      // Optimistic update: Hiển thị thành công ngay lập tức
       toast.success("Cập nhật thẻ thành công!");
       onOpenChange(false);
+      
+      // Gọi API ngầm bên dưới
+      await api.put(`/cards/${card.id}`, payload);
+      
+      // Cập nhật cache SWR với data thật từ server
+      mutate(`/decks/${card.deckId}/cards`);
+      
+      // Gọi callback để parent refresh nếu cần
       onUpdated();
     } catch (error: any) {
+      // Nếu API lỗi, hiển thị lỗi và rollback
       const message =
         error.response?.data?.message ||
         "Không thể cập nhật thẻ. Vui lòng thử lại.";
       toast.error(message);
+      onOpenChange(true); // Mở lại dialog
     } finally {
       setIsLoading(false);
     }

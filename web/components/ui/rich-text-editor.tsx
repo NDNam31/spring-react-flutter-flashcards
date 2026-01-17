@@ -75,6 +75,7 @@ const ToolbarButton = ({
     onClick={onClick}
     disabled={disabled}
     title={title}
+    tabIndex={-1}
     className={cn("h-8 w-8 p-0", isActive && "bg-muted")}
   >
     {children}
@@ -188,6 +189,7 @@ export const RichTextEditor = forwardRef<
                 size="sm"
                 disabled={disabled}
                 title="Text Color"
+                tabIndex={-1}
                 className="h-8 w-8 p-0"
               >
                 <Palette className="h-4 w-4" />
@@ -234,6 +236,7 @@ export const RichTextEditor = forwardRef<
                 size="sm"
                 disabled={disabled}
                 title="Highlight"
+                tabIndex={-1}
                 className="h-8 w-8 p-0"
               >
                 <Highlighter className="h-4 w-4" />

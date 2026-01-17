@@ -15,9 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "@/lib/axios";
 import { useAuthStore } from "@/store/useAuthStore";
-import { Deck } from "@/types/deck";
 import { Card } from "@/types/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +31,8 @@ import { AddCardDialog } from "@/components/AddCardDialog";
 import { ImportExportDialog } from "@/components/ImportExportDialog";
 import { AiGenerateDialog } from "@/components/AiGenerateDialog";
 import { StudyAnalytics } from "@/components/StudyAnalytics";
+import { useDeck } from "@/hooks/useDecks";
+import { useCards, useDifficultCount, useMasteryStats } from "@/hooks/useCards";
 
 interface PageProps {
   params: Promise<{ deckId: string }>;
@@ -42,21 +42,19 @@ export default function DeckDetailPage({ params }: PageProps) {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
   const [deckId, setDeckId] = useState<string | null>(null);
-  const [deck, setDeck] = useState<Deck | null>(null);
-  const [cards, setCards] = useState<Card[]>([]);
-  const [difficultCount, setDifficultCount] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("cards");
   
-  // Mastery filter states
-  const [masteryStats, setMasteryStats] = useState<{
-    newCards: number;
-    stillLearning: number;
-    almostDone: number;
-    mastered: number;
-  } | null>(null);
+  // Mastery filter state
   const [selectedFilter, setSelectedFilter] = useState<"all" | "new" | "learning" | "almost" | "mastered">("all");
+
+  // Use SWR hooks for data fetching với auto-caching
+  const { deck, isLoading: deckLoading, isError: deckError } = useDeck(deckId || "");
+  const { cards, isLoading: cardsLoading, mutate: mutateCards } = useCards(deckId);
+  const { count: difficultCount } = useDifficultCount(deckId);
+  const { stats: masteryStats } = useMasteryStats(deckId);
+
+  const isLoading = deckLoading || cardsLoading;
 
   useEffect(() => {
     const initPage = async () => {
@@ -72,75 +70,31 @@ export default function DeckDetailPage({ params }: PageProps) {
     initPage();
   }, [params, isAuthenticated, router]);
 
+  // Handle errors
   useEffect(() => {
-    if (deckId) {
-      fetchData();
+    if (deckError) {
+      toast.error("Không tìm thấy bộ thẻ");
+      router.push("/");
     }
-  }, [deckId]);
-
-  const fetchData = async () => {
-    if (!deckId) return;
-
-    setIsLoading(true);
-    try {
-      const [deckResponse, cardsResponse, difficultCountResponse, masteryResponse] = await Promise.all([
-        api.get(`/decks/${deckId}`),
-        api.get(`/decks/${deckId}/cards`),
-        api.get(`/decks/${deckId}/cards/difficult/count`),
-        api.get(`/statistics/summary/enhanced?deckId=${deckId}`),
-      ]);
-
-      const starredData = cardsResponse.data.map((c: any) => ({ 
-        id: c.id, 
-        term: c.term.substring(0, 30), 
-        isStarred: c.isStarred 
-      }));
-      console.log("📦 Fetched cards with isStarred:");
-      console.table(starredData);
-      
-      setDeck(deckResponse.data);
-      setCards(cardsResponse.data);
-      setDifficultCount(difficultCountResponse.data);
-      
-      // Set mastery stats
-      const mastery = masteryResponse.data.masteryLevels;
-      setMasteryStats({
-        newCards: mastery.newCards || 0,
-        stillLearning: mastery.stillLearning || 0,
-        almostDone: mastery.almostDone || 0,
-        mastered: mastery.mastered || 0,
-      });
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        toast.error("Không tìm thấy bộ thẻ");
-        router.push("/");
-      } else {
-        const message =
-          error.response?.data?.message || "Không thể tải dữ liệu";
-        toast.error(message);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [deckError, router]);
 
   const handleStudy = () => {
-    if (!deck || cards.length === 0) return;
+    if (!deck || !cards || cards.length === 0) return;
     router.push(`/decks/${deckId}/review`);
   };
 
   const handleLearn = () => {
-    if (!deck || cards.length === 0) return;
+    if (!deck || !cards || cards.length === 0) return;
     router.push(`/decks/${deckId}/learn`);
   };
 
   const handleMatch = () => {
-    if (!deck || cards.length === 0) return;
+    if (!deck || !cards || cards.length === 0) return;
     router.push(`/decks/${deckId}/match`);
   };
 
   const handleTest = () => {
-    if (!deck || cards.length === 0) return;
+    if (!deck || !cards || cards.length === 0) return;
     router.push(`/decks/${deckId}/test`);
   };
 
@@ -178,7 +132,7 @@ export default function DeckDetailPage({ params }: PageProps) {
   };
 
   // Filter cards based on selected filter
-  const filteredCards = cards.filter((card) => {
+  const filteredCards = (cards || []).filter((card) => {
     if (selectedFilter === "all") return true;
     return getCardMasteryLevel(card) === selectedFilter;
   });
@@ -196,7 +150,15 @@ export default function DeckDetailPage({ params }: PageProps) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/")}
+              onClick={() => {
+                // Nếu deck thuộc folder, quay về folder đó
+                if (deck?.folderId) {
+                  router.push(`/folders/${deck.folderId}`);
+                } else {
+                  // Nếu không có folder, quay về home
+                  router.push("/");
+                }
+              }}
               className="mb-2"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -228,7 +190,7 @@ export default function DeckDetailPage({ params }: PageProps) {
             <TabsList className="mb-6">
               <TabsTrigger value="cards" className="gap-2">
                 <FileText className="h-4 w-4" />
-                Danh sách thẻ ({cards.length})
+                Danh sách thẻ ({cards?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="analytics" className="gap-2">
                 <BarChart3 className="h-4 w-4" />
@@ -242,7 +204,7 @@ export default function DeckDetailPage({ params }: PageProps) {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-2xl font-bold">
-                  Danh sách thẻ ({cards.length})
+                  Danh sách thẻ ({cards?.length || 0})
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   Quản lý các thẻ học tập trong bộ thẻ này
@@ -255,7 +217,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                   <>
                     <AddCardDialog
                       deckId={parseInt(deckId)}
-                      onCardAdded={fetchData}
+                      onCardAdded={() => mutateCards()}
                     />
                     
                     <Tooltip>
@@ -275,7 +237,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                     
                     <ImportExportDialog
                       deckId={parseInt(deckId)}
-                      onImportSuccess={fetchData}
+                      onImportSuccess={() => mutateCards()}
                     />
 
                     <Button
@@ -297,24 +259,25 @@ export default function DeckDetailPage({ params }: PageProps) {
                   <span>
                     <Button
                       onClick={handleLearn}
-                      disabled={cards.length === 0}
+                      disabled={!cards || cards.length === 0}
                       variant="outline"
                     >
                       <Brain className="mr-2 h-4 w-4" />
-                      Học thuộc lòng
+                      Luyện tập (Tất cả thẻ)
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {cards.length === 0 ? (
+                {!cards || cards.length === 0 ? (
                   <TooltipContent>
                     <p>Cần có ít nhất 1 thẻ để bắt đầu học</p>
                   </TooltipContent>
                 ) : (
                   <TooltipContent className="max-w-sm">
-                    <p className="font-semibold mb-1">Học tất cả thẻ</p>
+                    <p className="font-semibold mb-1">Luyện tập TẤT CẢ thẻ trong deck</p>
                     <p className="text-xs">
-                      4 chế độ: Trắc nghiệm, Gõ phím, Hỗn hợp, Lật thẻ.
-                      Dùng cho <strong>thẻ mới</strong> hoặc ôn tập tất cả thẻ trong deck.
+                      🎯 4 chế độ: Trắc nghiệm, Gõ phím, Hỗn hợp, Lật thẻ.<br/>
+                      📚 Học thẻ mới hoặc ôn lại toàn bộ deck.<br/>
+                      ⚠️ Khác với "Ôn tập SRS" (chỉ ôn thẻ đến hạn).
                     </p>
                   </TooltipContent>
                 )}
@@ -325,7 +288,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                   <span>
                     <Button
                       onClick={handleMatch}
-                      disabled={cards.length === 0}
+                      disabled={!cards || cards.length === 0}
                       variant="outline"
                     >
                       <Grid3x3 className="mr-2 h-4 w-4" />
@@ -333,7 +296,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {cards.length === 0 && (
+                {(!cards || cards.length === 0) && (
                   <TooltipContent>
                     <p>Cần có ít nhất 1 thẻ để chơi game</p>
                   </TooltipContent>
@@ -345,7 +308,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                   <span>
                     <Button
                       onClick={handleTest}
-                      disabled={cards.length === 0}
+                      disabled={!cards || cards.length === 0}
                       variant="outline"
                     >
                       <ClipboardList className="mr-2 h-4 w-4" />
@@ -353,7 +316,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {cards.length === 0 && (
+                {(!cards || cards.length === 0) && (
                   <TooltipContent>
                     <p>Cần có ít nhất 1 thẻ để làm bài kiểm tra</p>
                   </TooltipContent>
@@ -391,24 +354,25 @@ export default function DeckDetailPage({ params }: PageProps) {
                   <span>
                     <Button
                       onClick={handleStudy}
-                      disabled={cards.length === 0}
+                      disabled={!cards || cards.length === 0}
                       variant="default"
                     >
                       <BookOpen className="mr-2 h-4 w-4" />
-                      Ôn tập SRS
+                      Ôn tập SRS (Thẻ đến hạn)
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {cards.length === 0 ? (
+                {!cards || cards.length === 0 ? (
                   <TooltipContent>
                     <p>Cần có ít nhất 1 thẻ để bắt đầu học</p>
                   </TooltipContent>
                 ) : (
                   <TooltipContent className="max-w-sm">
-                    <p className="font-semibold mb-1">Ôn tập theo lịch SRS</p>
+                    <p className="font-semibold mb-1">📅 Ôn tập theo lịch Spaced Repetition</p>
                     <p className="text-xs">
-                      Chỉ hiển thị các thẻ <strong>đến hạn ôn tập</strong> theo thuật toán Spaced Repetition.
-                      Nếu không có thẻ nào, hãy dùng <strong>"Học thuộc lòng"</strong> để bắt đầu học thẻ mới!
+                      ⏰ Chỉ hiển thị các thẻ <strong>ĐẾN HẠN ôn tập hôm nay</strong>.<br/>
+                      🔔 Xem thông báo ở trên để biết số thẻ cần ôn.<br/>
+                      💡 Nếu không có thẻ nào, hãy dùng <strong>"Luyện tập"</strong> để học thẻ mới!
                     </p>
                   </TooltipContent>
                 )}
@@ -468,8 +432,8 @@ export default function DeckDetailPage({ params }: PageProps) {
           <CardList
             cards={filteredCards}
             isLoading={isLoading}
-            onCardDeleted={fetchData}
-            onCardUpdated={fetchData}
+            onCardDeleted={() => mutateCards()}
+            onCardUpdated={() => mutateCards()}
           />
             </TabsContent>
 
@@ -486,7 +450,7 @@ export default function DeckDetailPage({ params }: PageProps) {
             open={aiDialogOpen}
             onOpenChange={setAiDialogOpen}
             deckId={parseInt(deckId)}
-            onCardsCreated={fetchData}
+            onCardsCreated={() => mutateCards()}
           />
         )}
       </div>

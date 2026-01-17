@@ -7,6 +7,7 @@ import * as z from "zod";
 import { Plus, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import { mutate } from "swr";
 import { api } from "@/lib/axios";
 import { uploadImageToCloudinary, validateImageFile } from "@/lib/cloudinary";
 import { Button } from "@/components/ui/button";
@@ -89,26 +90,37 @@ export function AddCardDialog({ deckId, onCardAdded }: AddCardDialogProps) {
 
   const onSubmit = async (data: CreateCardFormData) => {
     setIsLoading(true);
+    
+    const payload: CreateCardRequest = {
+      deckId: deckId,
+      term: data.term,
+      definition: data.definition,
+      example: data.example || undefined,
+      imageUrl: imageUrl || undefined,
+    };
+
     try {
-      const payload: CreateCardRequest = {
-        deckId: deckId,
-        term: data.term,
-        definition: data.definition,
-        example: data.example || undefined,
-        imageUrl: imageUrl || undefined,
-      };
-
-      await api.post(`/decks/${deckId}/cards`, payload);
-
+      // Optimistic update: Hiển thị thành công ngay lập tức
       toast.success("Thêm thẻ thành công!");
       reset(); // Reset form
       setImageUrl(""); // Reset image
-      onCardAdded(); // Refresh list
+      setOpen(false); // Đóng dialog
+      
+      // Gọi API ngầm bên dưới
+      const response = await api.post(`/decks/${deckId}/cards`, payload);
+      
+      // Cập nhật cache SWR với data thật từ server
+      mutate(`/decks/${deckId}/cards`);
+      
+      // Gọi callback để parent refresh nếu cần
+      onCardAdded();
     } catch (error: any) {
+      // Nếu API lỗi, hiển thị lỗi và rollback
       const message =
         error.response?.data?.message ||
         "Không thể thêm thẻ. Vui lòng thử lại.";
       toast.error(message);
+      setOpen(true); // Mở lại dialog
     } finally {
       setIsLoading(false);
     }
