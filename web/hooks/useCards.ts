@@ -4,7 +4,7 @@ import { Card } from '@/types/card';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data);
 
-export function useCards(deckId: string | number | null) {
+export function useCards(deckId: string | null) {
   const { data, error, isLoading, mutate } = useSWR<Card[]>(
     deckId ? `/decks/${deckId}/cards` : null,
     fetcher,
@@ -22,7 +22,7 @@ export function useCards(deckId: string | number | null) {
   };
 }
 
-export function useDifficultCount(deckId: string | number | null) {
+export function useDifficultCount(deckId: string | null) {
   const { data, error, isLoading } = useSWR<number>(
     deckId ? `/decks/${deckId}/cards/difficult/count` : null,
     fetcher,
@@ -39,7 +39,7 @@ export function useDifficultCount(deckId: string | number | null) {
   };
 }
 
-export function useMasteryStats(deckId: string | number | null) {
+export function useMasteryStats(deckId: string | null) {
   const { data, error, isLoading } = useSWR(
     deckId ? `/statistics/summary/enhanced?deckId=${deckId}` : null,
     fetcher,

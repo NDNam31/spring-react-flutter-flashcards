@@ -37,7 +37,7 @@ export default function ReviewPage({ params }: PageProps) {
   // Study Timer Hook - Track time spent in SRS review mode
   const { elapsedSeconds, incrementCardsStudied } = useStudyTimer({
     mode: StudyMode.SRS,
-    deckId: deckId ? parseInt(deckId) : undefined,
+    deckId: deckId || undefined,
     enabled: isReviewing && deckId !== null,
   });
 

@@ -1,6 +1,6 @@
 export interface Card {
-  id: number;
-  deckId: number;
+  id: string;
+  deckId: string;
   term: string;
   definition: string;
   example?: string;
@@ -20,7 +20,7 @@ export interface Card {
 }
 
 export interface CreateCardRequest {
-  deckId: number;
+  deckId: string;
   term: string;
   definition: string;
   example?: string;

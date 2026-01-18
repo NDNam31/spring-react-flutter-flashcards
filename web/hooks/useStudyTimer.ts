@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 interface UseStudyTimerOptions {
   mode: StudyMode;
-  deckId?: number;
+  deckId?: string;
   enabled?: boolean;
   onSessionSaved?: () => void;
 }
@@ -22,7 +22,7 @@ export function useStudyTimer({
   const [isTracking, setIsTracking] = useState(false);
   const startTimeRef = useRef<Date | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const cardIdsStudiedRef = useRef<Set<number>>(new Set());
+  const cardIdsStudiedRef = useRef<Set<string>>(new Set());
 
   // Start tracking
   useEffect(() => {
@@ -85,7 +85,7 @@ export function useStudyTimer({
     }
   };
 
-  const incrementCardsStudied = (cardId?: number) => {
+  const incrementCardsStudied = (cardId?: string) => {
     if (cardId !== undefined) {
       cardIdsStudiedRef.current.add(cardId);
     }

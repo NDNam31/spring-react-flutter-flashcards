@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface MatchPiece {
   id: string;
-  cardId: number;
+  cardId: string;
   type: "term" | "definition";
   content: string;
   imageUrl?: string;
@@ -50,7 +50,7 @@ export default function MatchGamePage({ params }: PageProps) {
   // Study Timer Hook - Track time spent in match mode
   const { elapsedSeconds, incrementCardsStudied, stopTracking } = useStudyTimer({
     mode: StudyMode.MATCH,
-    deckId: deckId ? parseInt(deckId) : undefined,
+    deckId: deckId || undefined,
     enabled: timerRunning && !isComplete && deckId !== null,
   });
 

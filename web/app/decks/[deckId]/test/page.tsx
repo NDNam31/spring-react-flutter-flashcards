@@ -38,7 +38,7 @@ type TestPhase = "CONFIG" | "TESTING" | "RESULT";
 export default function TestPage() {
   const params = useParams();
   const router = useRouter();
-  const deckId = Number(params.deckId);
+  const deckId = params.deckId as string;
   const { isAuthenticated } = useAuthStore();
 
   const [phase, setPhase] = useState<TestPhase>("CONFIG");

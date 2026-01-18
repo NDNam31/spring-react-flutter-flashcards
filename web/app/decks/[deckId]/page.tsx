@@ -216,7 +216,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                 {deckId && (
                   <>
                     <AddCardDialog
-                      deckId={parseInt(deckId)}
+                      deckId={deckId}
                       onCardAdded={() => mutateCards()}
                     />
                     
@@ -236,7 +236,7 @@ export default function DeckDetailPage({ params }: PageProps) {
                     </Tooltip>
                     
                     <ImportExportDialog
-                      deckId={parseInt(deckId)}
+                      deckId={deckId}
                       onImportSuccess={() => mutateCards()}
                     />
 
@@ -439,7 +439,7 @@ export default function DeckDetailPage({ params }: PageProps) {
 
             {/* Analytics Tab */}
             <TabsContent value="analytics" className="mt-0">
-              {deckId && <StudyAnalytics deckId={parseInt(deckId)} />}
+              {deckId && <StudyAnalytics deckId={deckId} />}
             </TabsContent>
           </Tabs>
         </main>
@@ -449,7 +449,7 @@ export default function DeckDetailPage({ params }: PageProps) {
           <AiGenerateDialog
             open={aiDialogOpen}
             onOpenChange={setAiDialogOpen}
-            deckId={parseInt(deckId)}
+            deckId={deckId}
             onCardsCreated={() => mutateCards()}
           />
         )}

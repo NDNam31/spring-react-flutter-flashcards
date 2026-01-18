@@ -13,7 +13,7 @@ export interface MultipleChoiceQuestion {
   type: "MCQ";
 
   /** ID câu hỏi (dùng card.id) */
-  id: number;
+  id: string;
 
   /** Thuật ngữ - là câu hỏi */
   question: string;
@@ -42,7 +42,7 @@ export interface WrittenQuestion {
   type: "WRITTEN";
 
   /** ID câu hỏi (dùng card.id) */
-  id: number;
+  id: string;
 
   /** Định nghĩa - là câu hỏi */
   question: string;

@@ -34,7 +34,7 @@ const createCardSchema = z.object({
 type CreateCardFormData = z.infer<typeof createCardSchema>;
 
 interface AddCardDialogProps {
-  deckId: number;
+  deckId: string;
   onCardAdded: () => void;
 }
 

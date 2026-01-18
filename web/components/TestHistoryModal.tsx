@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, XCircle, MinusCircle, Clock, ClipboardList } from "lucide-react";
 
 interface TestResult {
-  id: number;
+  id: string;
   score: number;
   correctCount: number;
   wrongCount: number;
@@ -34,7 +34,7 @@ interface TestResult {
 interface TestHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  deckId: number;
+  deckId: string;
 }
 
 export function TestHistoryModal({ isOpen, onClose, deckId }: TestHistoryModalProps) {

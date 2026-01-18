@@ -71,7 +71,7 @@ export function SearchCommand() {
   }, [debouncedQuery]);
 
   // Handle deck selection
-  const handleDeckSelect = (deckId: number) => {
+  const handleDeckSelect = (deckId: string) => {
     setOpen(false);
     setQuery("");
     setResults(null);
@@ -79,7 +79,7 @@ export function SearchCommand() {
   };
 
   // Handle card selection (navigate to deck containing the card)
-  const handleCardSelect = (deckId: number) => {
+  const handleCardSelect = (deckId: string) => {
     setOpen(false);
     setQuery("");
     setResults(null);

@@ -17,7 +17,7 @@ import {
 interface DueCardsSummary {
   totalDueCards: number;
   decksDue: Array<{
-    deckId: number;
+    deckId: string;
     deckTitle: string;
     dueCount: number;
   }>;

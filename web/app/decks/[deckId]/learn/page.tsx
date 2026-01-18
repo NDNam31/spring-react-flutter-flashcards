@@ -79,7 +79,7 @@ export default function LearnModePage({ params }: PageProps) {
   
   // Flashcard mode states
   const [isFlipped, setIsFlipped] = useState(false);
-  const [flashcardAnswers, setFlashcardAnswers] = useState<{ cardId: number; known: boolean }[]>([]);
+  const [flashcardAnswers, setFlashcardAnswers] = useState<{ cardId: string; known: boolean }[]>([]);
   
   // Cram mode (review wrong cards from test)
   const [isCramMode, setIsCramMode] = useState(false);
@@ -98,12 +98,12 @@ export default function LearnModePage({ params }: PageProps) {
   // Study Timer Hook - Track time spent in learn mode
   const { elapsedSeconds, incrementCardsStudied, stopTracking } = useStudyTimer({
     mode: StudyMode.LEARN,
-    deckId: deckId ? parseInt(deckId) : undefined,
+    deckId: deckId || undefined,
     enabled: hasStarted && !isComplete && deckId !== null,
   });
 
   // Helper function to record progress to SRS
-  const recordProgressToSRS = async (cardId: number, mode: "MCQ" | "WRITTEN" | "MIXED", isCorrect: boolean) => {
+  const recordProgressToSRS = async (cardId: string, mode: "MCQ" | "WRITTEN" | "MIXED", isCorrect: boolean) => {
     try {
       await api.post(`/cards/${cardId}/record-progress`, {
         mode,

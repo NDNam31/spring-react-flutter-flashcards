@@ -100,7 +100,7 @@ interface SortableRowProps {
   index: number;
   isSelected: boolean;
   isReordering: boolean;
-  onToggleSelect: (cardId: number) => void;
+  onToggleSelect: (cardId: string) => void;
   onToggleStar: (card: Card, e: React.MouseEvent) => void;
   onEdit: (card: Card) => void;
   onDelete: (card: Card) => void;
@@ -229,7 +229,7 @@ export function CardList({
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [deletingCard, setDeletingCard] = useState<Card | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [selectedCards, setSelectedCards] = useState<Set<number>>(new Set());
+  const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set());
   const [showBulkDeleteAlert, setShowBulkDeleteAlert] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
   const [reorderedCards, setReorderedCards] = useState<Card[]>([]);
@@ -326,7 +326,7 @@ export function CardList({
     }
   };
 
-  const toggleCardSelection = (cardId: number) => {
+  const toggleCardSelection = (cardId: string) => {
     const newSelection = new Set(selectedCards);
     if (newSelection.has(cardId)) {
       newSelection.delete(cardId);

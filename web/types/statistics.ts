@@ -7,9 +7,9 @@ export enum StudyMode {
 }
 
 export interface StudySession {
-  id: number;
-  userId: number;
-  deckId?: number;
+  id: string;
+  userId: string;
+  deckId?: string;
   mode: StudyMode;
   startTime: string;
   endTime: string;
@@ -33,7 +33,7 @@ export interface ModeStatisticsDetail {
 }
 
 export interface CreateStudySessionRequest {
-  deckId?: number;
+  deckId?: string;
   mode: StudyMode;
   startTime: string;
   endTime: string;

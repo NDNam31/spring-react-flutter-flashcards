@@ -1,10 +1,10 @@
 import { Deck } from './deck';
 
 export interface Folder {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
-  userId: number;
+  userId: string;
   deckCount: number;
   decks?: Deck[];
   createdAt: string;

@@ -4,7 +4,7 @@ import { Deck } from '@/types/deck';
 
 const fetcher = (url: string) => api.get(url).then(res => res.data);
 
-export function useDecks(folderId?: number | null) {
+export function useDecks(folderId?: string | null) {
   const url = folderId 
     ? `/folders/${folderId}/decks` 
     : '/decks';
@@ -22,7 +22,7 @@ export function useDecks(folderId?: number | null) {
   };
 }
 
-export function useDeck(deckId: string | number) {
+export function useDeck(deckId: string) {
   const { data, error, isLoading, mutate } = useSWR<Deck>(
     deckId ? `/decks/${deckId}` : null,
     fetcher,

@@ -24,7 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ImportExportDialogProps {
-  deckId: number;
+  deckId: string;
   onImportSuccess?: () => void;
 }
 

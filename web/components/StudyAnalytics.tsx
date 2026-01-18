@@ -40,7 +40,7 @@ interface MasteryLevel {
 }
 
 interface StudyAnalyticsProps {
-  deckId?: number;
+  deckId?: string;
 }
 
 export function StudyAnalytics({ deckId }: StudyAnalyticsProps) {

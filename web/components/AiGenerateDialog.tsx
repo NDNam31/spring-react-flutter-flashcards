@@ -20,7 +20,7 @@ import { AiGenerateRequest, AiCard, AiCardWithState } from "@/types/ai";
 interface AiGenerateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  deckId: number;
+  deckId: string;
   onCardsCreated: () => void;
 }
 
