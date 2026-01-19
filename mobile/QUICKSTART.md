@@ -113,10 +113,14 @@ flutter run
 ✅ **Form Validation**: Front & Back required  
 ✅ **Live Preview**: Card preview updates as you type  
 ✅ **Learning States**: Visual badges for progress  
-✅ **Study/Review Mode**: Flashcard flip animation with swipe gestures (NEW!)  
-✅ **SRS Algorithm**: SM-2 spaced repetition matching backend (NEW!)  
-✅ **Grade Buttons**: Again, Hard, Good, Easy with interval preview (NEW!)  
-✅ **Review Statistics**: Real-time progress and accuracy tracking (NEW!)  
+✅ **Study/Review Mode**: Flashcard flip animation with swipe gestures  
+✅ **SRS Algorithm**: SM-2 spaced repetition matching backend  
+✅ **Grade Buttons**: Again, Hard, Good, Easy with interval preview  
+✅ **Review Statistics**: Real-time progress and accuracy tracking  
+✅ **Authentication**: Login/logout with JWT token storage (NEW!)  
+✅ **Secure Storage**: Tokens protected with flutter_secure_storage (NEW!)  
+✅ **Sync Button**: Upload data to server (requires login) (NEW!)  
+✅ **User Menu**: Account dropdown with email and logout (NEW!)  
 
 ## 🗂️ Project Structure
 

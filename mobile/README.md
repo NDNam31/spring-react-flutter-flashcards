@@ -36,7 +36,7 @@ flutter run
 - **Star Cards**: Mark important cards for quick access
 - **Form Validation**: Comprehensive validation for Front/Back fields
 
-### ✅ Phase 4: Study/Review Mode (Completed - NEW!)
+### ✅ Phase 4: Study/Review Mode (Completed)
 - **ReviewScreen**: Interactive flashcard study with flip animation
 - **SRS Algorithm**: SM-2 spaced repetition system (matching backend)
 - **Swipeable Cards**: Gesture-based card navigation
@@ -45,11 +45,21 @@ flutter run
 - **Due Cards**: Automatic filtering of cards due for review
 - **Review Statistics**: Track performance during study sessions
 
-### ⏭️ Phase 5: Next Steps
-- Authentication (login/register)
-- SRS study/review screen with flashcard UI
-- Authentication (login/register)
-- API sync service (upload pending changes)
+### ✅ Phase 5: Authentication & Sync (Completed - NEW!)
+- **LoginScreen**: Email & password authentication UI
+- **AuthRepository**: API calls to `POST /api/v1/auth/login`
+- **AuthProvider**: Riverpod state management for auth
+- **Secure Storage**: JWT tokens stored with flutter_secure_storage
+- **ApiClient**: Dynamic token injection for API requests
+- **Sync Integration**: Sync button in HomeScreen with auth check
+- **User Menu**: Account dropdown with logout functionality
+
+### ⏭️ Phase 6: Next Steps
+- **SyncService**: Full implementation of data synchronization
+- **Conflict Resolution**: Handle server/local data conflicts
+- **Background Sync**: Periodic automatic sync
+- **Folder Management**: Create and organize deck folders
+- **Advanced Study Modes**: Match game, test mode, typing mode
 
 ## 🏗️ Architecture
 

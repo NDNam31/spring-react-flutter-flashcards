@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/pages/login_screen.dart';
 import '../providers/deck_list_provider.dart';
 import '../widgets/add_deck_dialog.dart';
 import '../widgets/deck_card.dart';
@@ -12,18 +14,77 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deckListAsync = ref.watch(deckListProvider);
+    final authState = ref.watch(authProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Decks'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          // Sync button
+          IconButton(
+            icon: const Icon(Icons.cloud_upload),
+            onPressed: () => _handleSync(context, ref),
+            tooltip: 'Sync with server',
+          ),
+          // Refresh button
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
               ref.read(deckListProvider.notifier).refresh();
             },
             tooltip: 'Refresh',
+          ),
+          // Logout/Login button
+          authState.when(
+            data: (user) {
+              if (user != null) {
+                return PopupMenuButton<String>(
+                  icon: const Icon(Icons.account_circle),
+                  onSelected: (value) {
+                    if (value == 'logout') {
+                      _handleLogout(context, ref);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      enabled: false,
+                      child: Text(
+                        user.email,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout),
+                          SizedBox(width: 8),
+                          Text('Logout'),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return IconButton(
+                  icon: const Icon(Icons.login),
+                  onPressed: () => _navigateToLogin(context),
+                  tooltip: 'Login',
+                );
+              }
+            },
+            loading: () => const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) => IconButton(
+              icon: const Icon(Icons.login),
+              onPressed: () => _navigateToLogin(context),
+              tooltip: 'Login',
+            ),
           ),
         ],
       ),
@@ -112,6 +173,113 @@ class HomeScreen extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('New Deck'),
         tooltip: 'Create new deck',
+      ),
+    );
+  }
+
+  /// Handle sync button press
+  void _handleSync(BuildContext context, WidgetRef ref) async {
+    final authState = ref.read(authProvider);
+    
+    authState.when(
+      data: (user) {
+        if (user == null) {
+          // Not logged in - show dialog
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Login Required'),
+              content: const Text(
+                'You need to login to sync your data with the server.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _navigateToLogin(context);
+                  },
+                  child: const Text('Login'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          // Logged in - trigger sync
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Syncing data...'),
+                ],
+              ),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          
+          // TODO: Call SyncService here
+          // await ref.read(syncServiceProvider).sync();
+          
+          // For now, just refresh the list
+          ref.read(deckListProvider.notifier).refresh();
+        }
+      },
+      loading: () {},
+      error: (_, __) {
+        _navigateToLogin(context);
+      },
+    );
+  }
+
+  /// Handle logout
+  void _handleLogout(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(authProvider.notifier).logout();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged out successfully'),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Navigate to login screen
+  void _navigateToLogin(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
       ),
     );
   }

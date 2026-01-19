@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/flashcard/presentation/pages/home_screen.dart';
+import 'features/auth/presentation/pages/login_screen.dart';
 
 void main() {
   runApp(
@@ -23,6 +24,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const HomeScreen(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+      },
     );
   }
 }
