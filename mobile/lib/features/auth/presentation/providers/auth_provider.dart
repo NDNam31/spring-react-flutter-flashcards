@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../data/repositories/auth_repository.dart';
-import '../domain/models/auth_user.dart';
+import '../../data/repositories/auth_repository.dart';
+import '../../domain/models/auth_user.dart';
 
 part 'auth_provider.g.dart';
 
@@ -40,6 +40,7 @@ class Auth extends _$Auth {
 
   /// Register new user
   Future<void> register({
+    required String name,
     required String email,
     required String password,
   }) async {
@@ -47,7 +48,11 @@ class Auth extends _$Auth {
     
     try {
       final repository = ref.read(authRepositoryProvider);
-      final authUser = await repository.register(email: email, password: password);
+      final authUser = await repository.register(
+        email: email,
+        password: password,
+        name: name,
+      );
       state = AsyncValue.data(authUser);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);

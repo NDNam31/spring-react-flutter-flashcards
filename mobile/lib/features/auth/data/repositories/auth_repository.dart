@@ -1,6 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
-import '../models/auth_user.dart';
+import '../../domain/models/auth_user.dart';
 import '../../../../core/constants/app_constants.dart';
 
 /// Authentication Repository
@@ -63,6 +63,7 @@ class AuthRepository {
   Future<AuthUser> register({
     required String email,
     required String password,
+    String? name,
   }) async {
     try {
       final response = await _dio.post(
@@ -70,6 +71,7 @@ class AuthRepository {
         data: {
           'email': email,
           'password': password,
+          if (name != null) 'name': name,
         },
       );
 
